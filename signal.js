@@ -22,3 +22,14 @@ export class Signal extends EventTarget {
     return () => this.removeEventListener("change", fn);
   }
 }
+
+export class Computed extends Signal {
+  constructor(fn, deps) {
+    super(fn(...deps));
+    for (const dep of deps) {
+      if (dep instanceof Signal) {
+        dep.addEventListener("change", () => this.value = fn(...deps));
+      }
+    }
+  }
+}

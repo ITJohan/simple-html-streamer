@@ -1,6 +1,6 @@
 // @ts-check
 
-import { Signal } from "./signal.js";
+import { Computed, Signal } from "./signal.js";
 
 /**
  * @typedef {{
@@ -88,7 +88,7 @@ export class CustomElement extends HTMLElement {
       const chunk = chunks[i].trim();
       const value = values[i];
 
-      if (value instanceof Signal) {
+      if (value instanceof Signal || value instanceof Computed) {
         switch (typeof value.value) {
           case "function": {
             // TODO: can match be replaced by replace with callback?

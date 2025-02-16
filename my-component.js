@@ -1,7 +1,7 @@
 // @ts-check
 
 import { CustomElement } from "./custom-element.js";
-import { Signal } from "./signal.js";
+import { Computed, Signal } from "./signal.js";
 
 class MyComponent extends CustomElement {
   constructor() {
@@ -9,7 +9,6 @@ class MyComponent extends CustomElement {
 
     const test = new Signal(1);
     const role = new Signal("heading");
-    const title = new Signal("hello world");
     const content = true
       ? this.html`<p>this is true</p>`
       : this.html`<p>this is false</p>`;
@@ -18,9 +17,11 @@ class MyComponent extends CustomElement {
       this.html`<li test=${liTest}>${num}</li>`
     );
     const onClick = new Signal(() => test.value++);
+    const title = new Computed(() => `hello ${test.value}`, [test]);
 
+    // TODO: implement support for arrays
     this.render(this.html`
-      <h1 test=${title} role=${role}>${test}</h1>
+      <h1 test=${test} role=${role}>${title}</h1>
       <button @click=${onClick} title="test">Click here</button>
       ${content}
       <ul>
