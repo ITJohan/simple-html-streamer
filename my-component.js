@@ -10,6 +10,9 @@ class MyComponent extends CustomElement {
       <button @click=${() =>
       console.log("hello there")} title="test">Click here</button>
       ${true ? this.html`<p>this is true</p>` : this.html`<p>this is false</p>`}
+      <ul>
+        ${[4, 5, 6].map((num) => this.html`<li test=${666}>${num}</li>`)}
+      </ul>
     `);
   }
 }

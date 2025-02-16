@@ -55,8 +55,6 @@ export class CustomElement extends HTMLElement {
       element.removeAttribute(text.id);
       element.textContent = text.value;
     }
-
-    console.log(this.shadow);
   }
 
   /**
@@ -79,6 +77,7 @@ export class CustomElement extends HTMLElement {
 
       switch (typeof value) {
         case "function": {
+          // TODO: can match be replaced by replace with callback?
           const event = chunk.match(/@(\w+)=/);
           if (event) {
             // Event handler
@@ -92,25 +91,29 @@ export class CustomElement extends HTMLElement {
           }
           break;
         }
+        case "number":
         case "string": {
+          // TODO: can match be replaced by replace with callback?
           const attribute = chunk.match(/(\w+)=/);
           if (attribute) {
             // Attribute
             const name = attribute[1];
             const id = `id-${crypto.randomUUID()}`;
 
-            fragments.attributes.push({ name, id, value });
+            fragments.attributes.push({ name, id, value: `${value}` });
 
             const updatedChunk = chunk.replace(attribute[0], `${id} `);
             fragments.html += updatedChunk;
           } else {
             // Text node
-            const match = chunk.match(/>(?!.*<)(.*)/);
-            if (match) {
-              const id = `id-${crypto.randomUUID()}`;
-              fragments.texts.push({ id, value: `${match[1]} ${value}` });
-              fragments.html += chunk.replace(/>(?!.*<)(.*)/, ` ${id}>`);
-            }
+            fragments.html += chunk.replace(
+              />(?!.*<)(.*)/,
+              (_match, ...args) => {
+                const id = `id-${crypto.randomUUID()}`;
+                fragments.texts.push({ id, value: `${args[0]} ${value}` });
+                return ` ${id}>`;
+              },
+            );
           }
 
           break;
@@ -121,13 +124,24 @@ export class CustomElement extends HTMLElement {
           break;
         }
         default: {
-          // Neste template
-          const nestedTemplate = /** @type {Fragments} */ (value);
-          fragments.attributes.push(...nestedTemplate.attributes);
-          fragments.events.push(...nestedTemplate.events);
-          fragments.texts.push(...nestedTemplate.texts);
-          fragments.html += chunk;
-          fragments.html += nestedTemplate.html;
+          // Neste template(s)
+          if (value instanceof Array) {
+            const nestedTemplates = /** @type {Fragments[]} */ (value);
+            fragments.html += chunk;
+            for (const nestedTemplate of nestedTemplates) {
+              fragments.attributes.push(...nestedTemplate.attributes);
+              fragments.events.push(...nestedTemplate.events);
+              fragments.texts.push(...nestedTemplate.texts);
+              fragments.html += nestedTemplate.html;
+            }
+          } else {
+            const nestedTemplate = /** @type {Fragments} */ (value);
+            fragments.attributes.push(...nestedTemplate.attributes);
+            fragments.events.push(...nestedTemplate.events);
+            fragments.texts.push(...nestedTemplate.texts);
+            fragments.html += chunk;
+            fragments.html += nestedTemplate.html;
+          }
         }
       }
     }
@@ -142,7 +156,6 @@ export class CustomElement extends HTMLElement {
     if (template.innerHTML === "") {
       this.#build(fragments);
     } else {
-      // TODO: update?
     }
   }
 }
