@@ -7,28 +7,49 @@ import { Computed, Signal } from "./signal.js";
  *  attributes: {name: string; id: string; signal: Signal}[];
  *  events: {name: string; id: string; signal: Signal}[];
  *  texts: {id: string; signal: Signal}[];
+ *  nested: Fragments[];
  *  html: string;
  * }} Fragments
  */
 
-/**
- * @typedef {{
- *  attributes: {element: HTMLElement; attribute: string;}[];
- *  events: {element: HTMLElement; event: string;}[];
- *  texts: {element: HTMLElement;}[];
- * }} Template
- */
-
 export class CustomElement extends HTMLElement {
-  /** @type {Template} */
-  #template;
   /** @type {ShadowRoot} */
   shadow;
 
   constructor() {
     super();
-    this.#template = { attributes: [], events: [], texts: [] };
     this.shadow = this.attachShadow({ mode: "open" });
+  }
+
+  /**
+   * @param {TemplateStringsArray} chunks
+   * @param  {...(Signal | Computed | HTMLElement | string | number )} values
+   */
+  createTemplate(chunks, ...values) {
+    /** @type {Record<string, any>} */
+    const idToValueMap = {};
+    let html = "";
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const value = values[i];
+      const id = crypto.randomUUID();
+      idToValueMap[id] = value;
+      html += chunk + id;
+    }
+
+    const matches = html.match(/(<.*?>|(?<=>)(.*?)(?=<))/g);
+    if (matches === null) throw new Error("match is null.");
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i];
+      const result = match.match(
+        /(?<=<)[a-z0-9-]*(?=\s)|(?<=\s)[a-z0-9-]*(?=\=)|(?<=")[a-z0-9-]*(?=\")/g,
+      );
+      if (result) {
+        // TODO: tag
+      } else {
+        // TODO: text
+      }
+    }
   }
 
   /**
@@ -46,7 +67,6 @@ export class CustomElement extends HTMLElement {
       attribute.signal.effect(() =>
         element.setAttribute(attribute.name, attribute.signal.value)
       );
-      this.#template.attributes.push({ element, attribute: attribute.name });
     }
 
     for (const event of fragments.events) {
@@ -66,7 +86,7 @@ export class CustomElement extends HTMLElement {
         throw new Error("Element not found.");
       }
       element.removeAttribute(text.id);
-      text.signal.effect(() => element.textContent = text.signal.value);
+      text.signal.effect(() => element.innerHTML = text.signal.value);
     }
   }
 
@@ -131,31 +151,37 @@ export class CustomElement extends HTMLElement {
             }
             break;
           }
+          case "object": {
+            // Nested template
+            const nestedTemplate = /** @type {Fragments} */ (value.value);
+            // fragments.attributes.push(...nestedTemplate.attributes);
+            // fragments.events.push(...nestedTemplate.events);
+            // fragments.texts.push(...nestedTemplate.texts);
+            // TODO: add id to chunk and save the nested template?
+
+            fragments.html += chunk;
+            // fragments.html += nestedTemplate.html;
+            break;
+          }
         }
       } else {
         if (value === undefined) {
           // End
           fragments.html += chunk;
-        } else {
-          // Nested template(s)
-          // TODO: can these be combined?
-          if (value instanceof Array) {
-            const nestedTemplates = /** @type {Fragments[]} */ (value);
-            fragments.html += chunk;
-            for (const nestedTemplate of nestedTemplates) {
-              fragments.attributes.push(...nestedTemplate.attributes);
-              fragments.events.push(...nestedTemplate.events);
-              fragments.texts.push(...nestedTemplate.texts);
-              fragments.html += nestedTemplate.html;
-            }
-          } else {
-            const nestedTemplate = /** @type {Fragments} */ (value);
+        } else if (value instanceof Array) {
+          // Nested template array
+          const nestedTemplates = /** @type {Fragments[]} */ (value);
+          fragments.html += chunk;
+          for (const nestedTemplate of nestedTemplates) {
             fragments.attributes.push(...nestedTemplate.attributes);
             fragments.events.push(...nestedTemplate.events);
             fragments.texts.push(...nestedTemplate.texts);
-            fragments.html += chunk;
             fragments.html += nestedTemplate.html;
           }
+        } else {
+          throw new Error(
+            `Unhandled case: ${JSON.stringify({ chunk, value })}`,
+          );
         }
       }
     }
