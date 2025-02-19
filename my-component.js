@@ -3,9 +3,11 @@
 import { CustomElement } from "./custom-element.js";
 import { Computed, Signal } from "./signal.js";
 
-class MyComponent extends CustomElement {
+class MyComponent extends HTMLElement {
   constructor() {
     super();
+    const shadow = this.attachShadow({ mode: "open" });
+    const customElement = new CustomElement();
 
     const test = new Signal(1);
     const role = new Signal("heading");
@@ -13,27 +15,27 @@ class MyComponent extends CustomElement {
     // TODO: content is not showing
     const content = new Computed(
       () => {
-        return toogle.value
-          ? this.html`<p>this is true</p>`
-          : this.html`<p>this is false</p>`;
+        return toogle.value ? "<p>this is true</p>" : "<p>this is false</p>";
       },
       [toogle],
     );
     const liTest = new Signal(666);
     const test2 = new Signal(4);
     const items = [test2, new Signal(5), new Signal(6)].map((num) =>
-      this.html`<li test=${liTest}>${num}</li>`
+      `<li test=${liTest}>${num}</li>`
     );
     const onClick = new Signal(() => toogle.value = !toogle.value);
     const title = new Computed(() => `hello ${test.value}`, [test]);
 
-    this.createTemplate`
+    const html = customElement.createTemplate`
       <h1 test="${test}" role="heading">${title}</h1>
       <button onclick="${onClick}" title="test">Click here</button>
       <div>
         <p>${content.value}</p>
       </div>
     `;
+
+    shadow.append(...html);
 
     /**
      * IDEA: we switch the passed in values with ids, and just parse the html with attributes and everything.
