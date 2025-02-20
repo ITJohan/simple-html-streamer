@@ -46,7 +46,6 @@ export class CustomElement {
     if (tags === null) throw new Error("match is null.");
     for (let i = 0; i < tags.length; i++) {
       const tag = tags[i];
-      // TODO: attribute values part of chunks are not respected
       const tagParts = tag.match(TAG_PARTS_REGEX);
       const endTag = tag.match(END_TAG_REGEX);
 
@@ -97,23 +96,21 @@ export class CustomElement {
         const element = document.createElement(tagParts[0]);
         for (let j = 1; j < tagParts.length; j += 2) {
           const attribute = tagParts[j];
-          const value = idToValueMap[tagParts[j + 1]];
+          const valueOrId = tagParts[j + 1];
+          const value = idToValueMap[valueOrId] ?? valueOrId;
           if (value instanceof Signal) {
             if (typeof value.value === "function") {
               value.effect(() =>
                 element.addEventListener(attribute.split("on")[1], value.value)
               );
             } else {
-              element.setAttribute(attribute, value.value);
+              value.effect(() => element.setAttribute(attribute, value.value));
             }
-          }
-          if (typeof value === "string") {
+          } else if (typeof value === "string") {
             element.setAttribute(attribute, value);
-          }
-          if (typeof value === "number") {
+          } else if (typeof value === "number") {
             element.setAttribute(attribute, String(value));
-          }
-          if (typeof value === "function") {
+          } else if (typeof value === "function") {
             element.addEventListener(attribute.split("on")[1], value);
           }
         }
