@@ -35,6 +35,9 @@ class MyComponent extends HTMLElement {
       <div>
         <p>${content.value}</p>
       </div>
+      <aside>
+        ${customElement.createTemplate`<p>this is a test</p>`}
+      </aside>
     `;
 
     shadow.append(...html);
