@@ -24,12 +24,14 @@ class MyComponent extends HTMLElement {
     const items = [test2, new Signal(5), new Signal(6)].map((num) =>
       `<li test=${liTest}>${num}</li>`
     );
-    const onClick = new Signal(() => toogle.value = !toogle.value);
+    const onClick = new Signal(() => console.log("hello"));
     const title = new Computed(() => `hello ${test.value}`, [test]);
 
     const html = customElement.createTemplate`
       <h1 test="${test}" role="heading">${title}</h1>
       <button onclick="${onClick}" title="test">Click here</button>
+      <button onclick="${() =>
+      console.log("world")}" title="test">Or here</button>
       <div>
         <p>${content.value}</p>
       </div>

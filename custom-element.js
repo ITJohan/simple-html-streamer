@@ -12,7 +12,7 @@ import { Computed, Signal } from "./signal.js";
  * }} Fragments
  */
 
-/** @typedef {Signal | Computed | Node | string | number} Value */
+/** @typedef {Signal | Computed | Node | string | number | EventListenerOrEventListenerObject} Value */
 
 const TAGS_REGEX = /(<.*?>|(?<=>)(.*?)(?=<))/g;
 const TAG_PARTS_REGEX =
@@ -25,7 +25,6 @@ export class CustomElement {
    * @param  {...Value} values
    */
   createTemplate(chunks, ...values) {
-    console.time();
     // Build html string
     /** @type {Record<string, Value>} */
     const idToValueMap = {};
@@ -96,21 +95,27 @@ export class CustomElement {
           const attribute = tagParts[j];
           const value = idToValueMap[tagParts[j + 1]];
           if (value instanceof Signal) {
-            // TODO: set effect
-            element.setAttribute(attribute, value.value);
+            if (typeof value.value === "function") {
+              value.effect(() =>
+                element.addEventListener(attribute.split("on")[1], value.value)
+              );
+            } else {
+              element.setAttribute(attribute, value.value);
+            }
           }
           if (typeof value === "string") {
-            // TODO: need to handle functions
             element.setAttribute(attribute, value);
           }
           if (typeof value === "number") {
             element.setAttribute(attribute, String(value));
           }
+          if (typeof value === "function") {
+            element.addEventListener(attribute.split("on")[1], value);
+          }
         }
         nodes.push({ tag: tagParts[0], node: element });
       }
     }
-    console.timeEnd();
     return nodes.map((node) => node.node);
   }
 
