@@ -24,7 +24,7 @@ class MyComponent extends HTMLElement {
     const items = [test2, new Signal(5), new Signal(6)].map((num) =>
       `<li test=${liTest}>${num}</li>`
     );
-    const onClick = new Signal(() => console.log("hello"));
+    const onClick = new Signal(() => test.value++);
     const title = new Computed(() => `hello ${test.value}`, [test]);
 
     const html = customElement.createTemplate`

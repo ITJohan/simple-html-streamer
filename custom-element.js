@@ -42,11 +42,11 @@ export class CustomElement {
     const nodes = [];
 
     // Build elements
-    // TODO: attribute values part of chunks are not respected
     const tags = html.match(TAGS_REGEX);
     if (tags === null) throw new Error("match is null.");
     for (let i = 0; i < tags.length; i++) {
       const tag = tags[i];
+      // TODO: attribute values part of chunks are not respected
       const tagParts = tag.match(TAG_PARTS_REGEX);
       const endTag = tag.match(END_TAG_REGEX);
 
@@ -83,6 +83,10 @@ export class CustomElement {
           nodes.push({ tag: "text", node: textNode });
         } else if (value instanceof HTMLElement) {
           nodes.push({ tag: "text", node: value });
+        } else {
+          // Plain text between two tags
+          const textNode = document.createTextNode(tag);
+          nodes.push({ tag: "text", node: textNode });
         }
       } else if (tagParts.length === 1) {
         // Tag without attributes
