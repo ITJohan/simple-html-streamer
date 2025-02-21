@@ -62,9 +62,18 @@ export const html = (chunks, ...values) => {
       // Between to tags
       const value = idToValueMap[tag];
       if (value instanceof Signal || value instanceof Computed) {
-        const textNode = document.createTextNode(value.value);
-        value.effect(() => textNode.nodeValue = value.value);
-        nodes.push({ tag: "text", node: textNode });
+        if (value.value instanceof Array) {
+          // Reactive nested html
+          const nestedNodes = /** @type {Node[]} */ (value.value);
+          for (const node of nestedNodes) {
+            value.effect(() => value);
+            nodes.push({ tag: node.nodeName.toLocaleLowerCase(), node });
+          }
+        } else {
+          const textNode = document.createTextNode(value.value);
+          value.effect(() => textNode.nodeValue = value.value);
+          nodes.push({ tag: "text", node: textNode });
+        }
       } else if (typeof value === "string") {
         const textNode = document.createTextNode(value);
         nodes.push({ tag: "text", node: textNode });

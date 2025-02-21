@@ -9,5 +9,18 @@
   <body>
     <my-component test="abc"></my-component>
     <my-component></my-component>
+    <button>Here</button>
   </body>
+  <script>
+    const element = document.querySelector("my-component");
+    const button = document.querySelector("button");
+    button.addEventListener("click", () => {
+      const test = element.getAttribute("test");
+      if (test === "abc") {
+        element.setAttribute("test", "cba");
+      } else {
+        element.setAttribute("test", "abc");
+      }
+    });
+  </script>
 </html>
