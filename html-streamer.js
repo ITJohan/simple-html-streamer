@@ -1,68 +1,48 @@
-const encoder = new TextEncoder();
-
-async function pipeValue(
-  /**
-   * @type {{
-   *  value: any;
-   *  controller: ReadableStreamDefaultController<Uint8Array>;
-   * }}
-   */ {
-    value,
-    controller,
-  },
+export function suspend(
+  /** @type {HTMLStreamValues} */ placeholder,
+  /** @type {Promise<HTMLStreamValues>} */ promise,
 ) {
-  if (value === null || value === undefined || value === false) {
-    return;
-  }
+  const p = promise.then((content) =>
+    html`
+      <p>${content}</p>
+    `
+  );
+  // @ts-ignore: Initially displays the placeholder
+  p[Symbol.toPrimitive] = html`
+    ${placeholder}
+  `;
 
-  if (value instanceof Promise) {
-    const resolvedValue = await value;
-    await pipeValue({ value: resolvedValue, controller });
-    return;
-  }
-
-  if (value instanceof ReadableStream) {
-    const reader = value.getReader();
-    while (true) {
-      const { done, value: chunk } = await reader.read();
-      if (done) break;
-      controller.enqueue(chunk);
-    }
-    return;
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      await pipeValue({ value: item, controller });
-    }
-    return;
-  }
-
-  controller.enqueue(encoder.encode(String(value)));
+  return p;
 }
 
-export function html(
-  /** @type {TemplateStringsArray}  */ strings,
-  /** @type {...any} */ ...values
-) {
-  /** @type {ReadableStream<Uint8Array>} */
-  const stream = new ReadableStream({
-    start: async (controller) => {
-      try {
-        for (let i = 0; i < strings.length; i++) {
-          controller.enqueue(encoder.encode(strings[i]));
+// TODO: support suspend
+// TODO: check things recursively for array values
 
-          if (i < values.length) {
-            await pipeValue({ value: values[i], controller });
+export async function* html(
+  /** @type {TemplateStringsArray}  */ strings,
+  /** @type {HTMLStreamValues[]} */ ...values
+) {
+  for (let i = 0; i < strings.length; i++) {
+    yield strings[i];
+    if (values[i]) {
+      const value = values[i];
+      // @ts-ignore: Checking if AsyncGenerator
+      if (typeof value[Symbol.asyncIterator] === "function") {
+        // @ts-ignore: Nested html function
+        yield* value;
+      } else if (Array.isArray(value)) {
+        for (const arrayValue of value) {
+          // @ts-ignore: Checking if AsyncGenerator
+          if (typeof arrayValue[Symbol.asyncIterator] === "function") {
+            // @ts-ignore: Nested html function
+            yield* arrayValue;
+          } else {
+            yield arrayValue;
           }
         }
-        controller.close();
-      } catch (error) {
-        console.error("Error in streaming template:", error);
-        controller.error(error);
+      } else {
+        yield value;
       }
-    },
-  });
-
-  return stream;
+    }
+  }
 }

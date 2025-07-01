@@ -1,10 +1,12 @@
 /**
  * @typedef {({
  *    request,
- *    params
+ *    params,
+ *    event
  *  }: {
  *    request: Request;
  *    params: Record<string, string | undefined>;
+ *    event: FetchEvent;
  *  }
  * ) => Response | Promise<Response>} Handler
  */
@@ -16,6 +18,10 @@
  *  handler: Handler;
  * }} Route
  */
+
+if ("URLPattern" in globalThis) {
+  // TODO: Load URLPattern polyfill
+}
 
 export default class AppRouter {
   /** @type {Route[]} */ routes;
@@ -47,11 +53,12 @@ export default class AppRouter {
   }
 
   handle(/** @type {FetchEvent} */ event) {
+    // TOOD: implement middleware support
     for (const route of this.routes) {
       const match = route.pattern.exec(event.request.url);
       if (match && event.request.method === route.method) {
         const params = match.pathname.groups;
-        return route.handler({ request: event.request, params });
+        return route.handler({ request: event.request, params, event });
       }
     }
   }
