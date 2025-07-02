@@ -16,7 +16,6 @@ export function suspend(
 }
 
 // TODO: support suspend
-// TODO: check things recursively for array values
 
 export async function* html(
   /** @type {TemplateStringsArray}  */ strings,
@@ -25,24 +24,27 @@ export async function* html(
   for (let i = 0; i < strings.length; i++) {
     yield strings[i];
     if (values[i]) {
-      const value = values[i];
-      // @ts-ignore: Checking if AsyncGenerator
-      if (typeof value[Symbol.asyncIterator] === "function") {
-        // @ts-ignore: Nested html function
-        yield* value;
-      } else if (Array.isArray(value)) {
-        for (const arrayValue of value) {
-          // @ts-ignore: Checking if AsyncGenerator
-          if (typeof arrayValue[Symbol.asyncIterator] === "function") {
-            // @ts-ignore: Nested html function
-            yield* arrayValue;
-          } else {
-            yield arrayValue;
-          }
-        }
-      } else {
-        yield value;
-      }
+      yield* yielder(values[i]);
     }
+  }
+}
+
+/**
+ * @param {HTMLStreamValues} value
+ * @returns {AsyncGenerator<string, void, unknown>}
+ */
+export async function* yielder(/** @type {HTMLStreamValues} */ value) {
+  // @ts-ignore: Check if AsyncGenerator
+  if (typeof value[Symbol.asyncIterator] === "function") {
+    // @ts-ignore: Nested AsyncGenerator
+    yield* value;
+  } else if (Array.isArray(value)) {
+    // Loop through arrays recursively
+    for (const arrayValue of value) {
+      yield* yielder(arrayValue);
+    }
+  } else {
+    // @ts-ignore: Handle other values
+    yield value;
   }
 }
