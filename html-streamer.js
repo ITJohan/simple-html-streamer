@@ -11,20 +11,17 @@ function isGenerator(value) {
  * @param  {(string | number | boolean | Generator<string, void, unknown>)[]} values
  */
 export function* html(strings, ...values) {
-  let result = "";
   for (let i = 0; i < strings.length; i++) {
-    result += strings[i];
+    yield strings[i];
     if (i < values.length) {
       const value = values[i];
       if (isGenerator(value)) {
         for (const part of value) {
-          result += part;
+          yield part;
         }
       } else {
-        result += String(value);
+        yield String(value);
       }
     }
   }
-
-  yield result;
 }

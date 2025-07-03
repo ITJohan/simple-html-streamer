@@ -11,10 +11,13 @@ Deno.test(`${html.name} renders empty string`, () => {
   const generator = html`
 
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a static string`, () => {
@@ -27,10 +30,13 @@ Deno.test(`${html.name} renders a static string`, () => {
   const generator = html`
     <h1>hello</h1>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a dynamic string`, () => {
@@ -43,10 +49,13 @@ Deno.test(`${html.name} renders a dynamic string`, () => {
   const generator = html`
     <p>${`hello`}</p>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a dynamic number`, () => {
@@ -59,10 +68,13 @@ Deno.test(`${html.name} renders a dynamic number`, () => {
   const generator = html`
     <p>${123}</p>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a dynamic boolean`, () => {
@@ -75,10 +87,13 @@ Deno.test(`${html.name} renders a dynamic boolean`, () => {
   const generator = html`
     <p>${true}</p>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a nested ${html.name}`, () => {
@@ -96,10 +111,13 @@ Deno.test(`${html.name} renders a nested ${html.name}`, () => {
   const generator = html`
     <p>${nestedHtml}</p>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
@@ -126,10 +144,13 @@ Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
       ${nestedHtml}
     </ul>
   `;
-  const result = generator.next();
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
   // Assert
-  assertEquals(result.value, expected);
+  assertEquals(result, expected);
 });
 
 // TODO: number[]
