@@ -187,11 +187,73 @@ Deno.test(`${html.name} renders a string generator array`, () => {
   assertEquals(result, expected);
 });
 
-// TODO: number[]
+Deno.test(`${html.name} renders a number generator array`, () => {
+  // Arrange
+  const items = [1, 2, 3].map((value) =>
+    html`
+      <li>${value}</li>
+    `
+  );
+  const expected = `
+    <ul>
+      
+      <li>1</li>
+    
+      <li>2</li>
+    
+      <li>3</li>
+    
+    </ul>
+  `;
 
-// TODO: boolean[]
+  // Act
+  const generator = html`
+    <ul>
+      ${items}
+    </ul>
+  `;
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
 
-// TODO: Generator[]
+  // Assert
+  assertEquals(result, expected);
+});
+
+Deno.test(`${html.name} renders a boolean generator array`, () => {
+  // Arrange
+  const items = [true, false, true].map((value) =>
+    html`
+      <li>${value}</li>
+    `
+  );
+  const expected = `
+    <ul>
+      
+      <li>true</li>
+    
+      <li>false</li>
+    
+      <li>true</li>
+    
+    </ul>
+  `;
+
+  // Act
+  const generator = html`
+    <ul>
+      ${items}
+    </ul>
+  `;
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
+
+  // Assert
+  assertEquals(result, expected);
+});
 
 // TODO: Promise<string>
 
