@@ -153,9 +153,45 @@ Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
   assertEquals(result, expected);
 });
 
+Deno.test(`${html.name} renders a string generator array`, () => {
+  // Arrange
+  const items = ["a", "b", "c"].map((value) =>
+    html`
+      <li>${value}</li>
+    `
+  );
+  const expected = `
+    <ul>
+      
+      <li>a</li>
+    
+      <li>b</li>
+    
+      <li>c</li>
+    
+    </ul>
+  `;
+
+  // Act
+  const generator = html`
+    <ul>
+      ${items}
+    </ul>
+  `;
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
+
+  // Assert
+  assertEquals(result, expected);
+});
+
 // TODO: number[]
 
 // TODO: boolean[]
+
+// TODO: Generator[]
 
 // TODO: Promise<string>
 
@@ -168,3 +204,5 @@ Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
 // TODO: Promise<number[]>
 
 // TODO: Promise<string[]>
+
+// TODO: Promise<Generator[]> (AsyncGenerator?)

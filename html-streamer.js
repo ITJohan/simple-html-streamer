@@ -8,7 +8,7 @@ function isGenerator(value) {
 
 /**
  * @param {TemplateStringsArray} strings
- * @param  {(string | number | boolean | Generator<string, void, unknown>)[]} values
+ * @param  {(string | number | boolean | Generator<string, void, unknown> | Generator<string, void, unknown>[])[]} values
  */
 export function* html(strings, ...values) {
   for (let i = 0; i < strings.length; i++) {
@@ -16,8 +16,14 @@ export function* html(strings, ...values) {
     if (i < values.length) {
       const value = values[i];
       if (isGenerator(value)) {
+        for (const chunk of value) {
+          yield chunk;
+        }
+      } else if (Array.isArray(value)) {
         for (const part of value) {
-          yield part;
+          for (const chunk of part) {
+            yield chunk;
+          }
         }
       } else {
         yield String(value);
