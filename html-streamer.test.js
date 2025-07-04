@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { html } from "./html-streamer.js";
+import { html, suspend } from "./html-streamer.js";
 
 Deno.test(`${html.name} renders empty string`, () => {
   // Arrange
@@ -255,7 +255,44 @@ Deno.test(`${html.name} renders a boolean generator array`, () => {
   assertEquals(result, expected);
 });
 
-// TODO: Promise<string>
+Deno.test(`${suspend.name} returned type shows placeholder when used as a string`, () => {
+  // Arrange
+  const placeholder = html`
+    <p>Loading⏳</p>
+  `;
+  const promise = new Promise(() => {});
+  const expected = `
+    <p>Loading⏳</p>
+  `;
+
+  // Act
+  const actual = suspend(placeholder, promise);
+
+  // Assert
+  assertEquals(`${actual}`, expected);
+});
+
+Deno.test(`${suspend.name} promise resolves to the content`, async () => {
+  // Arrange
+  const placeholder = html`
+    <p>Loading⏳</p>
+  `;
+  /** @type {Promise<ReturnType<html>>} */
+  const promise = new Promise((resolve) =>
+    resolve(html`
+      <p>Loaded✅</p>
+    `)
+  );
+  const expected = `
+      <p>Loaded✅</p>
+    `;
+
+  // Act
+  const actual = await suspend(placeholder, promise);
+
+  // Assert
+  assertEquals(actual, expected);
+});
 
 // TODO: Promise<number>
 

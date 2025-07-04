@@ -7,8 +7,21 @@ function isGenerator(value) {
 }
 
 /**
+ * @param {ReturnType<html>} generator
+ * @returns {string}
+ */
+function consumeGenerator(generator) {
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
+  return result;
+}
+
+/**
  * @param {TemplateStringsArray} strings
  * @param  {(string | number | boolean | Generator<string, void, unknown> | Generator<string, void, unknown>[])[]} values
+ * @returns {Generator<string, void, unknown>}
  */
 export function* html(strings, ...values) {
   for (let i = 0; i < strings.length; i++) {
@@ -30,4 +43,16 @@ export function* html(strings, ...values) {
       }
     }
   }
+}
+
+/**
+ * @param {ReturnType<html>} placeholder
+ * @param {Promise<ReturnType<html>>} promise
+ * @returns {Promise<string>} Promise with toPrimite function
+ */
+export function suspend(placeholder, promise) {
+  const p = promise.then((content) => consumeGenerator(content));
+  // @ts-ignore: Hack for showing placeholder in templates
+  p[Symbol.toPrimitive] = () => consumeGenerator(placeholder);
+  return p;
 }
