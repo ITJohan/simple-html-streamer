@@ -255,6 +255,40 @@ Deno.test(`${html.name} renders a boolean generator array`, () => {
   assertEquals(result, expected);
 });
 
+Deno.test(`${html.name} renders suspend placeholder`, () => {
+  // Arrange
+  const placeholder = html`
+    <p>Loading⏳</p>
+  `;
+  const promise = new Promise((resolve) =>
+    resolve(html`
+      <p>Loaded✅</p>
+    `)
+  );
+  const suspendPromise = suspend(placeholder, promise);
+  const expected = `
+    <div>
+      
+    <p>Loading⏳</p>
+  
+    </div>
+  `;
+
+  // Act
+  const generator = html`
+    <div>
+      ${suspendPromise}
+    </div>
+  `;
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
+
+  // Assert
+  assertEquals(result, expected);
+});
+
 Deno.test(`${suspend.name} returned type shows placeholder when used as a string`, () => {
   // Arrange
   const placeholder = html`
@@ -294,14 +328,4 @@ Deno.test(`${suspend.name} promise resolves to the content`, async () => {
   assertEquals(actual, expected);
 });
 
-// TODO: Promise<number>
-
-// TODO: Promise<boolean>
-
-// TODO: Promise<string[]>
-
-// TODO: Promise<number[]>
-
-// TODO: Promise<string[]>
-
-// TODO: Promise<Generator[]> (AsyncGenerator?)
+// TODO: suspend renders catch

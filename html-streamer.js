@@ -20,7 +20,13 @@ function consumeGenerator(generator) {
 
 /**
  * @param {TemplateStringsArray} strings
- * @param  {(string | number | boolean | Generator<string, void, unknown> | Generator<string, void, unknown>[])[]} values
+ * @param  {(
+ *  string |
+ *  number |
+ *  boolean |
+ *  Generator<string, void, unknown> |
+ *  Generator<string, void, unknown>[] |
+ *  Promise<string>)[]} values
  * @returns {Generator<string, void, unknown>}
  */
 export function* html(strings, ...values) {
