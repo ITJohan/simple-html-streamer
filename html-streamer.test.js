@@ -1,7 +1,7 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assert, assertEquals } from "jsr:@std/assert";
 import { html, isGenerator, stream, suspend } from "./html-streamer.js";
 
-export const consumeStream = async (
+const consumeStream = async (
   /** @type {ReadableStream} */ stream,
 ) => {
   let result = "";
@@ -276,13 +276,6 @@ Deno.test(`${html.name} renders suspend placeholder`, () => {
     `)
   );
   const suspendPromise = suspend(placeholder, promise);
-  const expected = `
-    <div>
-      
-    <p>Loading⏳</p>
-  
-    </div>
-  `;
 
   // Act
   const generator = html`
@@ -290,13 +283,22 @@ Deno.test(`${html.name} renders suspend placeholder`, () => {
       ${suspendPromise}
     </div>
   `;
-  let result = "";
+  let actual = "";
   for (const chunk of generator) {
-    result += chunk;
+    actual += chunk;
   }
+  const match = actual.match(/id="placeholder-(.+?)"/);
 
   // Assert
-  assertEquals(result, expected);
+  assert(match);
+  const expected = `
+    <div>
+      <div id="placeholder-${match[1]}">
+    <p>Loading⏳</p>
+  </div>
+    </div>
+  `;
+  assertEquals(actual, expected);
 });
 
 Deno.test(`${suspend.name} returned type shows placeholder when used as a string`, () => {
@@ -305,18 +307,20 @@ Deno.test(`${suspend.name} returned type shows placeholder when used as a string
     <p>Loading⏳</p>
   `;
   const promise = new Promise(() => {});
-  const expected = `
-    <p>Loading⏳</p>
-  `;
 
   // Act
   const actual = `${suspend(placeholder, promise)}`;
+  const match = actual.match(/id="placeholder-(.+?)"/);
 
   // Assert
+  assert(match);
+  const expected = `<div id="placeholder-${match[1]}">
+    <p>Loading⏳</p>
+  </div>`;
   assertEquals(actual, expected);
 });
 
-Deno.test(`${suspend.name} promise resolves to generator content`, async () => {
+Deno.test(`${suspend.name} promise resolves to generator content with injected script`, async () => {
   // Arrange
   const placeholder = html`
     <p>Loading⏳</p>
@@ -327,16 +331,32 @@ Deno.test(`${suspend.name} promise resolves to generator content`, async () => {
       <p>Loaded✅</p>
     `)
   );
-  const expected = `
-      <p>Loaded✅</p>
-    `;
 
   // Act
   const actual = await consumeStream(
     stream(await suspend(placeholder, promise)),
   );
+  const match = actual.match(/id="content-(.+?)"/);
 
   // Assert
+  assert(match);
+  const expected = `
+      <template id="content-${match[1]}">
+        
+      <p>Loaded✅</p>
+    
+      </template>
+      <script>
+      (function() {
+        const content = document.getElementById('content-${match[1]}');
+        const placeholder = document.getElementById('placeholder-${match[1]}');
+        if (content && placeholder) {
+          placeholder.replaceWith(content);
+          this.remove();
+        }
+      })()
+      </script>
+    `;
   assertEquals(actual, expected);
 });
 

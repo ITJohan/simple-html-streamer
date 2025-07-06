@@ -43,8 +43,23 @@ export function* html(strings, ...values) {
  * @returns {Promise<ReturnType<html>>} Promise with toPrimite function
  */
 export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
+  const streamId = crypto.randomUUID();
   const p = contentGeneratorPromise.then(function* (content) {
-    yield* content;
+    yield* html`
+      <template id="content-${streamId}">
+        ${content}
+      </template>
+      <script>
+      (function() {
+        const content = document.getElementById('content-${streamId}');
+        const placeholder = document.getElementById('placeholder-${streamId}');
+        if (content && placeholder) {
+          placeholder.replaceWith(content);
+          this.remove();
+        }
+      })()
+      </script>
+    `;
   });
   // @ts-ignore: Hack for showing placeholder in templates
   p[Symbol.toPrimitive] = () => {
@@ -52,7 +67,7 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
     for (const chunk of placeholderGenerator) {
       placeholder += chunk;
     }
-    return placeholder;
+    return `<div id="placeholder-${streamId}">${placeholder}</div>`;
   };
   return p;
 };
