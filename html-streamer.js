@@ -56,3 +56,17 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
   };
   return p;
 };
+
+/**
+ * @param {ReturnType<html>} generator
+ */
+export const stream = (generator) => {
+  return new ReadableStream({
+    start(controller) {
+      for (const chunk of generator) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+};

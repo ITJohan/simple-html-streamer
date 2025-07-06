@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert";
-import { html, isGenerator, suspend } from "./html-streamer.js";
+import { html, isGenerator, stream, suspend } from "./html-streamer.js";
 
 /**
  * @param {ReturnType<html>} generator
@@ -363,6 +363,26 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
     if (isGenerator(error)) {
       actual = consumeGenerator(error);
     }
+  }
+
+  // Assert
+  assertEquals(actual, expected);
+});
+
+Deno.test(`${stream.name} streams the given html generator`, async () => {
+  // Arrange
+  const generator = html`
+    <p>hello world</p>
+  `;
+  const expected = `
+    <p>hello world</p>
+  `;
+
+  // Act
+  const htmlStream = stream(generator);
+  let actual = "";
+  for await (const chunk of htmlStream) {
+    actual += chunk;
   }
 
   // Assert
