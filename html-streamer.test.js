@@ -4,12 +4,15 @@ import { html, isGenerator, stream, suspend } from "./html-streamer.js";
 const consumeStream = async (
   /** @type {ReadableStream} */ stream,
 ) => {
+  const decoder = new TextDecoder();
   let result = "";
   for await (const chunk of stream) {
-    result += chunk;
+    result += decoder.decode(chunk);
   }
   return result;
 };
+
+// TODO: consumeGenerator (instead of using stream as a dependency)
 
 Deno.test(`${html.name} renders empty string`, () => {
   // Arrange
@@ -351,8 +354,9 @@ Deno.test(`${suspend.name} promise resolves to generator content with injected s
         const content = document.getElementById('content-${match[1]}');
         const placeholder = document.getElementById('placeholder-${match[1]}');
         if (content && placeholder) {
-          placeholder.replaceWith(content);
-          this.remove();
+          placeholder.replaceWith(content.content.cloneNode(true));
+          content.remove();
+          document.currentScript.remove();
         }
       })()
       </script>

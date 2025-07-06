@@ -10,10 +10,10 @@ export const isGenerator = (value) => value.toString() === "[object Generator]";
  *  string |
  *  number |
  *  boolean |
- *  Generator<string, void, unknown> |
- *  Generator<string, void, unknown>[] |
- *  Promise<Generator<string, void, unknown>>)[]} values
- * @returns {Generator<string, void, unknown>}
+ *  Generator<string | Promise<any>, void, unknown> |
+ *  Generator<string | Promise<any>, void, unknown>[] |
+ *  Promise<any>)[]} values
+ * @returns {Generator<string | Promise<any>, void, unknown>}
  */
 export function* html(strings, ...values) {
   for (let i = 0; i < strings.length; i++) {
@@ -31,6 +31,9 @@ export function* html(strings, ...values) {
           }
         }
       } else {
+        if (value instanceof Promise) {
+          yield value;
+        }
         yield String(value);
       }
     }
@@ -54,13 +57,32 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
         const content = document.getElementById('content-${streamId}');
         const placeholder = document.getElementById('placeholder-${streamId}');
         if (content && placeholder) {
-          placeholder.replaceWith(content);
-          this.remove();
+          placeholder.replaceWith(content.content.cloneNode(true));
+          content.remove();
+          document.currentScript.remove();
+        }
+      })()
+      </script>
+    `;
+  }).catch(function* (content) {
+    yield* html`
+      <template id="content-${streamId}">
+        ${content}
+      </template>
+      <script>
+      (function() {
+        const content = document.getElementById('content-${streamId}');
+        const placeholder = document.getElementById('placeholder-${streamId}');
+        if (content && placeholder) {
+          placeholder.replaceWith(content.content.cloneNode(true));
+          content.remove();
+          document.currentScript.remove();
         }
       })()
       </script>
     `;
   });
+
   // @ts-ignore: Hack for showing placeholder in templates
   p[Symbol.toPrimitive] = () => {
     let placeholder = "";
@@ -69,6 +91,7 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
     }
     return `<div id="placeholder-${streamId}">${placeholder}</div>`;
   };
+
   return p;
 };
 
@@ -76,12 +99,37 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
  * @param {ReturnType<html>} generator
  */
 export const stream = (generator) => {
-  return new ReadableStream({
-    start(controller) {
+  /** @type {Promise<void>[]} */
+  const promises = [];
+  const encoder = new TextEncoder();
+  /** @type {ReadableStream<Uint8Array>} */ const stream = new ReadableStream({
+    async start(controller) {
       for (const chunk of generator) {
-        controller.enqueue(chunk);
+        if (chunk instanceof Promise) {
+          const processPromise = async () => {
+            try {
+              const resolvedContentGenerator = await chunk;
+              for (const contentChunk of resolvedContentGenerator) {
+                controller.enqueue(encoder.encode(contentChunk));
+              }
+            } catch (error) {
+              if (isGenerator(error)) {
+                for (const errorChunk of error) {
+                  controller.enqueue(encoder.encode(errorChunk));
+                }
+              }
+            }
+          };
+          promises.push(processPromise());
+        } else {
+          controller.enqueue(encoder.encode(chunk));
+        }
       }
+
+      await Promise.all(promises);
+
       controller.close();
     },
   });
+  return stream;
 };
