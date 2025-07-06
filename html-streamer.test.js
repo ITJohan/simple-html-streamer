@@ -1,5 +1,17 @@
 import { assertEquals } from "jsr:@std/assert";
-import { html, suspend } from "./html-streamer.js";
+import { html, isGenerator, suspend } from "./html-streamer.js";
+
+/**
+ * @param {ReturnType<html>} generator
+ * @returns {string}
+ */
+export function consumeGenerator(generator) {
+  let result = "";
+  for (const chunk of generator) {
+    result += chunk;
+  }
+  return result;
+}
 
 Deno.test(`${html.name} renders empty string`, () => {
   // Arrange
@@ -300,13 +312,13 @@ Deno.test(`${suspend.name} returned type shows placeholder when used as a string
   `;
 
   // Act
-  const actual = suspend(placeholder, promise);
+  const actual = `${suspend(placeholder, promise)}`;
 
   // Assert
-  assertEquals(`${actual}`, expected);
+  assertEquals(actual, expected);
 });
 
-Deno.test(`${suspend.name} promise resolves to the content`, async () => {
+Deno.test(`${suspend.name} promise resolves to generator content`, async () => {
   // Arrange
   const placeholder = html`
     <p>Loading⏳</p>
@@ -322,10 +334,37 @@ Deno.test(`${suspend.name} promise resolves to the content`, async () => {
     `;
 
   // Act
-  const actual = await suspend(placeholder, promise);
+  const actual = consumeGenerator(await suspend(placeholder, promise));
 
   // Assert
   assertEquals(actual, expected);
 });
 
-// TODO: suspend renders catch
+Deno.test(`${suspend.name} promise rejects to error`, async () => {
+  // Arrange
+  const placeholder = html`
+    <p>Loading⏳</p>
+  `;
+  /** @type {Promise<ReturnType<html>>} */
+  const promise = new Promise((_resolve, reject) =>
+    reject(html`
+      <p>Failed❌</p>
+    `)
+  );
+  const expected = `
+      <p>Failed❌</p>
+    `;
+
+  // Act
+  let actual = "";
+  try {
+    await suspend(placeholder, promise);
+  } catch (error) {
+    if (isGenerator(error)) {
+      actual = consumeGenerator(error);
+    }
+  }
+
+  // Assert
+  assertEquals(actual, expected);
+});

@@ -2,20 +2,8 @@
  * @param {any} value
  * @returns {value is Generator<string, void, unknown>}
  */
-function isGenerator(value) {
+export function isGenerator(value) {
   return value.toString() === "[object Generator]";
-}
-
-/**
- * @param {ReturnType<html>} generator
- * @returns {string}
- */
-function consumeGenerator(generator) {
-  let result = "";
-  for (const chunk of generator) {
-    result += chunk;
-  }
-  return result;
 }
 
 /**
@@ -26,7 +14,7 @@ function consumeGenerator(generator) {
  *  boolean |
  *  Generator<string, void, unknown> |
  *  Generator<string, void, unknown>[] |
- *  Promise<string>)[]} values
+ *  Promise<Generator<string, void, unknown>>)[]} values
  * @returns {Generator<string, void, unknown>}
  */
 export function* html(strings, ...values) {
@@ -52,13 +40,21 @@ export function* html(strings, ...values) {
 }
 
 /**
- * @param {ReturnType<html>} placeholder
- * @param {Promise<ReturnType<html>>} promise
- * @returns {Promise<string>} Promise with toPrimite function
+ * @param {ReturnType<html>} placeholderGenerator
+ * @param {Promise<ReturnType<html>>} contentGeneratorPromise
+ * @returns {Promise<ReturnType<html>>} Promise with toPrimite function
  */
-export function suspend(placeholder, promise) {
-  const p = promise.then((content) => consumeGenerator(content));
+export function suspend(placeholderGenerator, contentGeneratorPromise) {
+  const p = contentGeneratorPromise.then(function* (content) {
+    yield* content;
+  });
   // @ts-ignore: Hack for showing placeholder in templates
-  p[Symbol.toPrimitive] = () => consumeGenerator(placeholder);
+  p[Symbol.toPrimitive] = () => {
+    let placeholder = "";
+    for (const chunk of placeholderGenerator) {
+      placeholder += chunk;
+    }
+    return placeholder;
+  };
   return p;
 }
