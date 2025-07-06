@@ -5,13 +5,13 @@ import { html, isGenerator, suspend } from "./html-streamer.js";
  * @param {ReturnType<html>} generator
  * @returns {string}
  */
-export function consumeGenerator(generator) {
+export const consumeGenerator = (generator) => {
   let result = "";
   for (const chunk of generator) {
     result += chunk;
   }
   return result;
-}
+};
 
 Deno.test(`${html.name} renders empty string`, () => {
   // Arrange

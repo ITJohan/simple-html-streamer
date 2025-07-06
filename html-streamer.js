@@ -2,9 +2,7 @@
  * @param {any} value
  * @returns {value is Generator<string, void, unknown>}
  */
-export function isGenerator(value) {
-  return value.toString() === "[object Generator]";
-}
+export const isGenerator = (value) => value.toString() === "[object Generator]";
 
 /**
  * @param {TemplateStringsArray} strings
@@ -44,7 +42,7 @@ export function* html(strings, ...values) {
  * @param {Promise<ReturnType<html>>} contentGeneratorPromise
  * @returns {Promise<ReturnType<html>>} Promise with toPrimite function
  */
-export function suspend(placeholderGenerator, contentGeneratorPromise) {
+export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
   const p = contentGeneratorPromise.then(function* (content) {
     yield* content;
   });
@@ -57,4 +55,4 @@ export function suspend(placeholderGenerator, contentGeneratorPromise) {
     return placeholder;
   };
   return p;
-}
+};
