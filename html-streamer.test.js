@@ -12,8 +12,6 @@ const consumeStream = async (
   return result;
 };
 
-// TODO: consumeGenerator (instead of using stream as a dependency)
-
 Deno.test(`${html.name} renders empty string`, () => {
   // Arrange
   const expected = `
