@@ -102,7 +102,8 @@ export const stream = (generator) => {
   /** @type {Promise<void>[]} */
   const promises = [];
   const encoder = new TextEncoder();
-  /** @type {ReadableStream<Uint8Array>} */ const stream = new ReadableStream({
+  /** @type {ReadableStream<Uint8Array>} */
+  const stream = new ReadableStream({
     async start(controller) {
       for (const chunk of generator) {
         if (chunk instanceof Promise) {
