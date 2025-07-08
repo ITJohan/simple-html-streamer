@@ -30,10 +30,9 @@ export function* html(strings, ...values) {
             yield chunk;
           }
         }
+      } else if (value instanceof Promise) {
+        yield value;
       } else {
-        if (value instanceof Promise) {
-          yield value;
-        }
         yield String(value);
       }
     }
@@ -122,6 +121,7 @@ export const stream = (generator) => {
             }
           };
           promises.push(processPromise());
+          controller.enqueue(encoder.encode(String(chunk)));
         } else {
           controller.enqueue(encoder.encode(chunk));
         }

@@ -373,21 +373,33 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
       <p>Failed❌</p>
     `)
   );
-  const expected = `
-      <p>Failed❌</p>
-    `;
 
   // Act
-  let actual = "";
-  try {
-    await suspend(placeholder, promise);
-  } catch (error) {
-    if (isGenerator(error)) {
-      actual = await consumeStream(stream(error));
-    }
-  }
+  const actual = await consumeStream(
+    stream(await suspend(placeholder, promise)),
+  );
+  const match = actual.match(/id="content-(.+?)"/);
 
   // Assert
+  assert(match);
+  const expected = `
+      <template id="content-${match[1]}">
+        
+      <p>Failed❌</p>
+    
+      </template>
+      <script>
+      (function() {
+        const content = document.getElementById('content-${match[1]}');
+        const placeholder = document.getElementById('placeholder-${match[1]}');
+        if (content && placeholder) {
+          placeholder.replaceWith(content.content.cloneNode(true));
+          content.remove();
+          document.currentScript.remove();
+        }
+      })()
+      </script>
+    `;
   assertEquals(actual, expected);
 });
 
