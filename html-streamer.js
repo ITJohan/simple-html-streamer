@@ -30,10 +30,9 @@ export function* html(strings, ...values) {
             yield chunk;
           }
         }
+      } else if (value instanceof Promise) {
+        yield value;
       } else {
-        if (value instanceof Promise) {
-          yield value;
-        }
         yield String(value);
       }
     }
@@ -99,6 +98,7 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
  * @param {ReturnType<html>} generator
  */
 export const stream = (generator) => {
+  let isCancelled = false;
   /** @type {Promise<void>[]} */
   const promises = [];
   const encoder = new TextEncoder();
@@ -107,29 +107,48 @@ export const stream = (generator) => {
     async start(controller) {
       for (const chunk of generator) {
         if (chunk instanceof Promise) {
-          const processPromise = async () => {
+          /** @param {Promise<any>} chunk */
+          const processPromise = async (chunk) => {
+            /** @type {Promise<void>[]} */
+            const nestedPromises = [];
             try {
               const resolvedContentGenerator = await chunk;
               for (const contentChunk of resolvedContentGenerator) {
+                if (contentChunk instanceof Promise) {
+                  nestedPromises.push(processPromise(contentChunk));
+                }
+                if (isCancelled) return;
                 controller.enqueue(encoder.encode(contentChunk));
               }
+              await Promise.all(nestedPromises);
             } catch (error) {
-              if (isGenerator(error)) {
-                for (const errorChunk of error) {
-                  controller.enqueue(encoder.encode(errorChunk));
+              // @ts-ignore: TODO: handle error type
+              for (const errorChunk of error) {
+                if (errorChunk instanceof Promise) {
+                  nestedPromises.push(processPromise(errorChunk));
                 }
+                if (isCancelled) return;
+                controller.enqueue(encoder.encode(errorChunk));
               }
+              await Promise.all(nestedPromises);
             }
           };
-          promises.push(processPromise());
+          promises.push(processPromise(chunk));
+          if (isCancelled) return;
+          controller.enqueue(encoder.encode(String(chunk)));
         } else {
+          if (isCancelled) return;
           controller.enqueue(encoder.encode(chunk));
         }
       }
 
       await Promise.all(promises);
 
+      if (isCancelled) return;
       controller.close();
+    },
+    cancel() {
+      isCancelled = true;
     },
   });
   return stream;
