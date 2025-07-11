@@ -1,4 +1,4 @@
-import { html, stream, suspend } from "./html-streamer.js";
+import { html, stream, suspend } from "../html-streamer.js";
 
 /**
  * @param {ReturnType<html>} placeholder
