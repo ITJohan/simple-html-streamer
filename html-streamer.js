@@ -1,6 +1,8 @@
+/** @typedef {Generator<string | Promise<any>, void, unknown>} HTMLGenerator */
+
 /**
  * @param {any} value
- * @returns {value is Generator<string, void, unknown>}
+ * @returns {value is HTMLGenerator}
  */
 export const isGenerator = (value) => value.toString() === "[object Generator]";
 
@@ -10,10 +12,10 @@ export const isGenerator = (value) => value.toString() === "[object Generator]";
  *  string |
  *  number |
  *  boolean |
- *  Generator<string | Promise<any>, void, unknown> |
- *  Generator<string | Promise<any>, void, unknown>[] |
+ *  HTMLGenerator |
+ *  HTMLGenerator[] |
  *  Promise<any>)[]} values
- * @returns {Generator<string | Promise<any>, void, unknown>}
+ * @returns {HTMLGenerator}
  */
 export function* html(strings, ...values) {
   for (let i = 0; i < strings.length; i++) {
@@ -40,9 +42,9 @@ export function* html(strings, ...values) {
 }
 
 /**
- * @param {ReturnType<html>} placeholderGenerator
- * @param {Promise<ReturnType<html>>} contentGeneratorPromise
- * @returns {Promise<ReturnType<html>>} Promise with toPrimite function
+ * @param {HTMLGenerator} placeholderGenerator
+ * @param {Promise<HTMLGenerator>} contentGeneratorPromise
+ * @returns {Promise<HTMLGenerator>} Promise with toPrimite function
  */
 export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
   const streamId = crypto.randomUUID();
@@ -95,7 +97,7 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
 };
 
 /**
- * @param {ReturnType<html>} generator
+ * @param {HTMLGenerator} generator
  */
 export const stream = (generator) => {
   let isCancelled = false;
