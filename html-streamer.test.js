@@ -58,45 +58,23 @@ Deno.test(`${html.name} renders a static string`, () => {
   assertEquals(actual, expected);
 });
 
-Deno.test(`${html.name} renders a dynamic string`, () => {
+Deno.test(`${html.name} renders dynamic primitives`, () => {
   // Arrange
   const expected = `
-    <p>${`hello`}</p>
+    <ul>
+      <li>${`hello`}</li>
+      <li>${123}</li>
+      <li>${true}</li>
+    </ul>
   `;
 
   // Act
   const actual = consumeGenerator(html`
-    <p>${`hello`}</p>
-  `);
-
-  // Assert
-  assertEquals(actual, expected);
-});
-
-Deno.test(`${html.name} renders a dynamic number`, () => {
-  // Arrange
-  const expected = `
-    <p>${123}</p>
-  `;
-
-  // Act
-  const actual = consumeGenerator(html`
-    <p>${123}</p>
-  `);
-
-  // Assert
-  assertEquals(actual, expected);
-});
-
-Deno.test(`${html.name} renders a dynamic boolean`, () => {
-  // Arrange
-  const expected = `
-    <p>${true}</p>
-  `;
-
-  // Act
-  const actual = consumeGenerator(html`
-    <p>${true}</p>
+    <ul>
+      <li>${`hello`}</li>
+      <li>${123}</li>
+      <li>${true}</li>
+    </ul>
   `);
 
   // Assert
