@@ -60,6 +60,30 @@ export function* html(strings, ...values) {
 }
 
 /**
+ * @param {string} id
+ * @param {HTMLGenerator} content
+ * @returns {HTMLGenerator}
+ */
+function* generateInjectionScript(id, content) {
+  yield* html`
+    <template id="content-${id}">
+      ${content}
+    </template>
+    <script>
+    (function() {
+      const content = document.getElementById('content-${id}');
+      const placeholder = document.getElementById('placeholder-${id}');
+      if (content && placeholder) {
+        placeholder.replaceWith(content.content.cloneNode(true));
+        content.remove();
+        document.currentScript.remove();
+      }
+    })()
+    </script>
+  `;
+}
+
+/**
  * @param {HTMLGenerator} placeholderGenerator
  * @param {Promise<HTMLGenerator>} contentGeneratorPromise
  * @returns {Promise<HTMLGenerator>} Promise with toPrimitive function
@@ -68,41 +92,13 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
   const streamId = crypto.randomUUID();
   const contentPromiseWithToPrimitive = contentGeneratorPromise.then(
     function* (content) {
-      yield* html`
-        <template id="content-${streamId}">
-          ${content}
-        </template>
-        <script>
-        (function() {
-          const content = document.getElementById('content-${streamId}');
-          const placeholder = document.getElementById('placeholder-${streamId}');
-          if (content && placeholder) {
-            placeholder.replaceWith(content.content.cloneNode(true));
-            content.remove();
-            document.currentScript.remove();
-          }
-        })()
-        </script>
-      `;
+      yield* generateInjectionScript(streamId, content);
     },
-  ).catch(function* (content) {
-    yield* html`
-      <template id="content-${streamId}">
-        ${content}
-      </template>
-      <script>
-      (function() {
-        const content = document.getElementById('content-${streamId}');
-        const placeholder = document.getElementById('placeholder-${streamId}');
-        if (content && placeholder) {
-          placeholder.replaceWith(content.content.cloneNode(true));
-          content.remove();
-          document.currentScript.remove();
-        }
-      })()
-      </script>
-    `;
-  });
+  ).catch(
+    function* (content) {
+      yield* generateInjectionScript(streamId, content);
+    },
+  );
 
   // @ts-ignore: Hack for showing placeholder when promise is used as a string
   contentPromiseWithToPrimitive[Symbol.toPrimitive] = () => {

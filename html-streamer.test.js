@@ -275,48 +275,48 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
   </div>
       </div>
     
-        <template id="content-${matches[0][1]}">
-          
+    <template id="content-${matches[0][1]}">
+      
       
     <p>Loaded✅</p>
   <div id="placeholder-${matches[1][1]}">
     <p>Loading nested⏳</p>
   </div>
     
-        </template>
-        <script>
-        (function() {
-          const content = document.getElementById('content-${matches[0][1]}');
-          const placeholder = document.getElementById('placeholder-${
+    </template>
+    <script>
+    (function() {
+      const content = document.getElementById('content-${matches[0][1]}');
+      const placeholder = document.getElementById('placeholder-${
     matches[0][1]
   }');
-          if (content && placeholder) {
-            placeholder.replaceWith(content.content.cloneNode(true));
-            content.remove();
-            document.currentScript.remove();
-          }
-        })()
-        </script>
+      if (content && placeholder) {
+        placeholder.replaceWith(content.content.cloneNode(true));
+        content.remove();
+        document.currentScript.remove();
+      }
+    })()
+    </script>
+  
+    <template id="content-${matches[1][1]}">
       
-        <template id="content-${matches[1][1]}">
-          
     <p>Loaded nested✅</p>
   
-        </template>
-        <script>
-        (function() {
-          const content = document.getElementById('content-${matches[1][1]}');
-          const placeholder = document.getElementById('placeholder-${
+    </template>
+    <script>
+    (function() {
+      const content = document.getElementById('content-${matches[1][1]}');
+      const placeholder = document.getElementById('placeholder-${
     matches[1][1]
   }');
-          if (content && placeholder) {
-            placeholder.replaceWith(content.content.cloneNode(true));
-            content.remove();
-            document.currentScript.remove();
-          }
-        })()
-        </script>
-      `;
+      if (content && placeholder) {
+        placeholder.replaceWith(content.content.cloneNode(true));
+        content.remove();
+        document.currentScript.remove();
+      }
+    })()
+    </script>
+  `;
   assertEquals(actual, expected);
 });
 
@@ -358,25 +358,23 @@ Deno.test(`${suspend.name} promise resolves to generator content with injected s
   // Assert
   assert(match);
   const expected = `
-        <template id="content-${match[1]}">
-          
+    <template id="content-${match[1]}">
+      
       <p>Loaded✅</p>
     
-        </template>
-        <script>
-        (function() {
-          const content = document.getElementById('content-${match[1]}');
-          const placeholder = document.getElementById('placeholder-${
-    match[1]
-  }');
-          if (content && placeholder) {
-            placeholder.replaceWith(content.content.cloneNode(true));
-            content.remove();
-            document.currentScript.remove();
-          }
-        })()
-        </script>
-      `;
+    </template>
+    <script>
+    (function() {
+      const content = document.getElementById('content-${match[1]}');
+      const placeholder = document.getElementById('placeholder-${match[1]}');
+      if (content && placeholder) {
+        placeholder.replaceWith(content.content.cloneNode(true));
+        content.remove();
+        document.currentScript.remove();
+      }
+    })()
+    </script>
+  `;
   assertEquals(actual, expected);
 });
 
@@ -399,22 +397,22 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
   // Assert
   assert(match);
   const expected = `
-      <template id="content-${match[1]}">
-        
+    <template id="content-${match[1]}">
+      
       <p>Failed❌</p>
     
-      </template>
-      <script>
-      (function() {
-        const content = document.getElementById('content-${match[1]}');
-        const placeholder = document.getElementById('placeholder-${match[1]}');
-        if (content && placeholder) {
-          placeholder.replaceWith(content.content.cloneNode(true));
-          content.remove();
-          document.currentScript.remove();
-        }
-      })()
-      </script>
-    `;
+    </template>
+    <script>
+    (function() {
+      const content = document.getElementById('content-${match[1]}');
+      const placeholder = document.getElementById('placeholder-${match[1]}');
+      if (content && placeholder) {
+        placeholder.replaceWith(content.content.cloneNode(true));
+        content.remove();
+        document.currentScript.remove();
+      }
+    })()
+    </script>
+  `;
   assertEquals(actual, expected);
 });
