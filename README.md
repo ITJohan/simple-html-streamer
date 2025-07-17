@@ -1,7 +1,7 @@
 # Out Of Order HTML Streamer
 
-Exports 3 functions, `html`, `suspend` and `stream`, which makes it possible to
-stream HTML out of order.
+Exports 4 functions, `html`, `suspend`, `stream` and `escapeHTML`, which enables
+streaming HTML out of order.
 
 - `html`, used for generating HTML chunks.
 - `suspend`, used for generating HTML chunks asynchronously, showing a
