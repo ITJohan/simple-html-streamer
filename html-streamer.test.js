@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { html, stream, suspend } from "./html-streamer.js";
+import { escapeHTML, html, stream, suspend } from "./html-streamer.js";
 
 /**
  * @param {ReadableStream} stream
@@ -392,5 +392,18 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
     })()
     </script>
   `;
+  assertEquals(actual, expected);
+});
+
+Deno.test(`${escapeHTML.name} escapes a HTML string`, () => {
+  // Arrange
+  const maliciousHtml = "<script>alert('XSS attack!!!');</script>";
+  const expected =
+    "&lt;script&gt;alert(&#039;XSS attack!!!&#039;);&lt;/script&gt;";
+
+  // Act
+  const actual = escapeHTML(maliciousHtml);
+
+  // Assert
   assertEquals(actual, expected);
 });
