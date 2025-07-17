@@ -24,6 +24,19 @@
 const isHTMLGenerator = (value) => value.toString() === "[object Generator]";
 
 /**
+ * @param {string} string
+ * @returns {string}
+ */
+export const escapeHTML = (string) => {
+  return string
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+/**
  * @param {SupportedValue} value
  * @returns {HTMLGenerator}
  */
@@ -38,8 +51,6 @@ function* processValue(value) {
     for (const item of array) {
       yield* processValue(item);
     }
-  } else if (value instanceof Promise) {
-    yield value;
   } else {
     yield value;
   }
