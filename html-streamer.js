@@ -201,3 +201,20 @@ export const stream = (generator) => {
     },
   });
 };
+
+/**
+ * @param {string[]} islands
+ * @param {string} path
+ * @returns {HTMLGenerator}
+ */
+export const registerIslands = (islands, path) => {
+  return html`
+    <script type="module">
+    ${islands.map((island) =>
+      html`
+        if (document.querySelector('${island}')) import('${path}${island}.js');
+      `
+    )}
+    </script>
+  `;
+};

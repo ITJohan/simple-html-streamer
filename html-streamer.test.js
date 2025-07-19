@@ -1,5 +1,11 @@
 import { assert, assertEquals } from "jsr:@std/assert";
-import { escapeHTML, html, stream, suspend } from "./html-streamer.js";
+import {
+  escapeHTML,
+  html,
+  registerIslands,
+  stream,
+  suspend,
+} from "./html-streamer.js";
 
 /**
  * @param {ReadableStream} stream
@@ -403,6 +409,33 @@ Deno.test(`${escapeHTML.name} escapes a HTML string`, () => {
 
   // Act
   const actual = escapeHTML(maliciousHtml);
+
+  // Assert
+  assertEquals(actual, expected);
+});
+
+Deno.test(`${registerIslands.name} returns script element that lazy loads island script`, () => {
+  // Arrange
+  const islandsToBeLoaded = [
+    "island-1",
+    "island-2",
+    "island-3",
+  ];
+  const expected = `
+    <script type="module">
+    
+        if (document.querySelector('island-1')) import('./islands/island-1.js');
+      
+        if (document.querySelector('island-2')) import('./islands/island-2.js');
+      
+        if (document.querySelector('island-3')) import('./islands/island-3.js');
+      
+    </script>
+  `;
+
+  // Act
+  const generator = registerIslands(islandsToBeLoaded, "./islands/");
+  const actual = consumeGenerator(generator);
 
   // Assert
   assertEquals(actual, expected);
