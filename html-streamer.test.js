@@ -304,6 +304,30 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
   assertEquals(actual, expected);
 });
 
+Deno.test(`${stream.name} cancels the chunk enqueueing when canceled`, async () => {
+  // Arrange
+  const generatorStream = stream(html`
+    <h1>This is generating some HTML</h1>
+    ${html`
+      <p>This is generating some more</p>
+    `}
+  `);
+  const expected = `
+    <h1>This is generating some HTML</h1>
+    `;
+  const decoder = new TextDecoder();
+
+  // Act
+  let actual = "";
+  for await (const chunk of generatorStream) {
+    actual += decoder.decode(chunk);
+    break;
+  }
+
+  // Assert
+  assertEquals(actual, expected);
+});
+
 Deno.test(`${suspend.name} returned object shows placeholder when used as a string`, () => {
   // Arrange
   const placeholder = html`
