@@ -1,21 +1,4 @@
-/**
- * @typedef {(
- *  (string | number | boolean | HTMLGenerator) |
- *  (string | number | boolean | HTMLGenerator)[] |
- *  Promise<string | number | boolean | HTMLGenerator> |
- *  Promise<string | number | boolean | HTMLGenerator>[]
- * )} SupportedValue
- */
-
-/**
- * @typedef {(
- *  Generator<
- *    (string | number | boolean | Promise<string | number | boolean | HTMLGenerator>),
- *    void,
- *    unknown
- *  >
- * )} HTMLGenerator
- */
+// @ts-self-types="./html-streamer.d.ts"
 
 /**
  * @param {any} value
