@@ -1,4 +1,9 @@
-import { html, registerIslands, stream, suspend } from "../html-streamer.js";
+import {
+  html,
+  registerIslands,
+  stream,
+  suspend,
+} from "../src/html-streamer.js";
 
 /**
  * @param {ReturnType<html>} placeholder
