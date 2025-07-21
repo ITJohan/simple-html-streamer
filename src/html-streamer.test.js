@@ -5,7 +5,7 @@ import {
   registerIslands,
   stream,
   suspend,
-} from "../src/html-streamer.js";
+} from "./html-streamer.js";
 
 /**
  * @param {ReadableStream} stream
