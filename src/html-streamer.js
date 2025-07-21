@@ -1,3 +1,5 @@
+/// <reference types="./html-streamer.d.ts" />
+
 /**
  * @param {any} value
  * @returns {value is HTMLGenerator}
