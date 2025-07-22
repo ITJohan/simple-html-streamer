@@ -1,4 +1,4 @@
-/// <reference types="./html-streamer.d.ts" />
+/** @import { HTMLGenerator, SupportedValue } from './types.js' */
 
 /**
  * @param {any} value
