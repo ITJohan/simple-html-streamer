@@ -18,7 +18,6 @@
  * )} SupportedValue
  */
 
-
 /**
  * @param {any} value
  * @returns {value is HTMLGenerator}
@@ -205,11 +204,25 @@ export const stream = (generator) => {
 };
 
 /**
- * @param {string[]} islands
  * @param {string} path
- * @returns {HTMLGenerator}
+ * @returns {Promise<HTMLGenerator>}
  */
-export const registerIslands = (islands, path) => {
+export const registerIslands = async (path) => {
+  let directory;
+  try {
+    directory = Deno.readDir(path);
+  } catch (error) {
+    console.error("Could not find directory:", error);
+    throw new Error("Could not find directory");
+  }
+
+  const islands = [];
+  for await (const file of directory) {
+    if (file.isFile && file.name.endsWith(".js")) {
+      islands.push(file.name.split(".")[0]);
+    }
+  }
+
   return html`
     <script type="module">
     ${islands.map((island) =>
