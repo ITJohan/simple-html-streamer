@@ -438,13 +438,14 @@ Deno.test(`${escapeHTML.name} escapes a HTML string`, () => {
   assertEquals(actual, expected);
 });
 
-Deno.test(`${registerIslands.name} returns script element that lazy loads island script`, () => {
+Deno.test(`${registerIslands.name} reads islands dir and returns script element that lazy loads island script`, async () => {
   // Arrange
-  const islandsToBeLoaded = [
-    "island-1",
-    "island-2",
-    "island-3",
-  ];
+  const encoder = new TextEncoder();
+  const dirPath = new URL("./islands/", import.meta.url).pathname;
+  await Deno.mkdir(dirPath);
+  await Deno.writeFile(dirPath + "island-1.js", encoder.encode("island-1"));
+  await Deno.writeFile(dirPath + "island-2.js", encoder.encode("island-2"));
+  await Deno.writeFile(dirPath + "island-3.js", encoder.encode("island-3"));
   const expected = `
     <script type="module">
     
@@ -458,8 +459,9 @@ Deno.test(`${registerIslands.name} returns script element that lazy loads island
   `;
 
   // Act
-  const generator = registerIslands(islandsToBeLoaded, "./islands/");
+  const generator = registerIslands(import.meta.url, "./islands/");
   const actual = consumeGenerator(generator);
+  await Deno.remove(dirPath, { recursive: true });
 
   // Assert
   assertEquals(actual, expected);

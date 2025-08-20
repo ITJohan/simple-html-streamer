@@ -18,7 +18,6 @@
  * )} SupportedValue
  */
 
-
 /**
  * @param {any} value
  * @returns {value is HTMLGenerator}
@@ -205,16 +204,31 @@ export const stream = (generator) => {
 };
 
 /**
- * @param {string[]} islands
- * @param {string} path
+ * @param {string} basePath
+ * @param {string} relativePath
  * @returns {HTMLGenerator}
  */
-export const registerIslands = (islands, path) => {
+export const registerIslands = (basePath, relativePath) => {
+  let directory;
+  try {
+    directory = Deno.readDirSync(new URL(relativePath, basePath).pathname);
+  } catch (error) {
+    console.error("Could not find directory:", error);
+    throw new Error("Could not find directory");
+  }
+
+  const islands = [];
+  for (const file of directory) {
+    if (file.isFile && file.name.endsWith(".js")) {
+      islands.push(file.name.split(".")[0]);
+    }
+  }
+
   return html`
     <script type="module">
     ${islands.map((island) =>
       html`
-        if (document.querySelector('${island}')) import('${path}${island}.js');
+        if (document.querySelector('${island}')) import('${relativePath}${island}.js');
       `
     )}
     </script>
