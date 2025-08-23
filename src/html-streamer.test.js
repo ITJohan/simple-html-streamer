@@ -447,7 +447,7 @@ Deno.test(`${registerIslands.name} reads islands dir and returns script element 
   await Deno.writeFile(dirPath + "island-2.js", encoder.encode("island-2"));
   await Deno.writeFile(dirPath + "island-3.js", encoder.encode("island-3"));
   const expected = `
-    <script type="module">
+    <script>
     
         if (document.querySelector('island-1')) import('./islands/island-1.js');
       

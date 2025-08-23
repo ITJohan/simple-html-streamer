@@ -225,7 +225,7 @@ export const registerIslands = (basePath, relativePath) => {
   }
 
   return html`
-    <script type="module">
+    <script>
     ${islands.map((island) =>
       html`
         if (document.querySelector('${island}')) import('${relativePath}${island}.js');
