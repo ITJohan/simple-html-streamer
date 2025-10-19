@@ -1,34 +1,9 @@
-/**
- * @typedef {(Generator<
- *  (
- *    | string | number | boolean
- *    | Promise<string | number | boolean | HTMLGenerator>
- *  ),
- *  void,
- *  unknown
- * >)} HTMLGenerator
- */
+import { HTMLGenerator, SupportedValue } from "./types.ts";
 
-/**
- * @typedef {(
- *  | (string | number | boolean | HTMLGenerator)
- *  | (string | number | boolean | HTMLGenerator)[]
- *  | Promise<(string | number | boolean | HTMLGenerator)>
- *  | Promise<(string | number | boolean | HTMLGenerator)>[]
- * )} SupportedValue
- */
+const isHTMLGenerator = (value: unknown): value is HTMLGenerator =>
+  Object.prototype.toString.call(value) === "[object Generator]";
 
-/**
- * @param {any} value
- * @returns {value is HTMLGenerator}
- */
-const isHTMLGenerator = (value) => value.toString() === "[object Generator]";
-
-/**
- * @param {string} string
- * @returns {string}
- */
-export const escapeHTML = (string) => {
+export const escapeHTML = (string: string): string => {
   return string
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -37,11 +12,7 @@ export const escapeHTML = (string) => {
     .replace(/'/g, "&#039;");
 };
 
-/**
- * @param {SupportedValue} value
- * @returns {HTMLGenerator}
- */
-function* processValue(value) {
+function* processValue(value: SupportedValue): HTMLGenerator {
   if (isHTMLGenerator(value)) {
     const generator = value;
     for (const chunk of generator) {
@@ -57,12 +28,10 @@ function* processValue(value) {
   }
 }
 
-/**
- * @param {TemplateStringsArray} strings
- * @param  {SupportedValue[]} values
- * @returns {HTMLGenerator}
- */
-export function* html(strings, ...values) {
+export function* html(
+  strings: TemplateStringsArray,
+  ...values: SupportedValue[]
+): HTMLGenerator {
   for (let i = 0; i < strings.length; i++) {
     yield strings[i];
     if (i < values.length) {
@@ -71,12 +40,10 @@ export function* html(strings, ...values) {
   }
 }
 
-/**
- * @param {string} id
- * @param {HTMLGenerator} content
- * @returns {HTMLGenerator}
- */
-function* generateInjectionScript(id, content) {
+function* generateInjectionScript(
+  id: string,
+  content: HTMLGenerator,
+): HTMLGenerator {
   yield* html`
     <template id="content-${id}">
       ${content}
@@ -95,12 +62,10 @@ function* generateInjectionScript(id, content) {
   `;
 }
 
-/**
- * @param {HTMLGenerator} placeholderGenerator
- * @param {Promise<HTMLGenerator>} contentGeneratorPromise
- * @returns {Promise<HTMLGenerator>} Promise with toPrimitive function
- */
-export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
+export const suspend = (
+  placeholderGenerator: HTMLGenerator,
+  contentGeneratorPromise: Promise<HTMLGenerator>,
+): Promise<HTMLGenerator> => {
   const streamId = crypto.randomUUID();
   const contentPromiseWithToPrimitive = contentGeneratorPromise.then(
     function* (content) {
@@ -124,21 +89,17 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
   return contentPromiseWithToPrimitive;
 };
 
-/**
- * @param {HTMLGenerator} generator
- * @returns {ReadableStream<Uint8Array>}
- */
-export const stream = (generator) => {
+export const stream = (
+  generator: HTMLGenerator,
+): ReadableStream<Uint8Array> => {
   let isCanceled = false;
 
   return new ReadableStream({
     async start(controller) {
-      /**
-       * @param {HTMLGenerator} generator
-       * @param {ReadableStreamDefaultController<Uint8Array>} controller
-       * @returns {Promise<void>}
-       */
-      const processShell = async (generator, controller) => {
+      const processShell = async (
+        generator: HTMLGenerator,
+        controller: ReadableStreamDefaultController<Uint8Array>,
+      ): Promise<void> => {
         if (isCanceled) return;
 
         /** @type {Promise<void>[]} */
@@ -155,17 +116,14 @@ export const stream = (generator) => {
         await Promise.all(promises);
       };
 
-      /**
-       * @param {Promise<string | number | boolean | HTMLGenerator>} promise
-       * @param {ReadableStreamDefaultController<Uint8Array>} controller
-       * @param {TextEncoder} encoder
-       * @returns {Promise<void>}
-       */
-      const processPromise = async (promise, controller, encoder) => {
+      const processPromise = async (
+        promise: Promise<string | number | boolean | HTMLGenerator>,
+        controller: ReadableStreamDefaultController<Uint8Array>,
+        encoder: TextEncoder,
+      ): Promise<void> => {
         if (isCanceled) return;
 
-        /** @type {Promise<void>[]} */
-        const nestedPromises = [];
+        const nestedPromises: Promise<void>[] = [];
         try {
           const value = await promise;
           if (isHTMLGenerator(value)) {
@@ -203,12 +161,10 @@ export const stream = (generator) => {
   });
 };
 
-/**
- * @param {string} basePath
- * @param {string} relativePath
- * @returns {HTMLGenerator}
- */
-export const registerIslands = (basePath, relativePath) => {
+export const registerIslands = (
+  basePath: string,
+  relativePath: string,
+): HTMLGenerator => {
   let directory;
   try {
     directory = Deno.readDirSync(new URL(relativePath, basePath).pathname);
