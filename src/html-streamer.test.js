@@ -1,16 +1,19 @@
-import { assert, assertEquals } from "@std/assert";
+import { assert, assertEquals } from "jsr:@std/assert";
 import {
   escapeHTML,
   html,
   registerIslands,
   stream,
   suspend,
-} from "./html-streamer.ts";
-import { HTMLGenerator } from "./types.ts";
+} from "./html-streamer.js";
 
+/**
+ * @param {ReadableStream} stream
+ * @returns {Promise<string>}
+ */
 const consumeStream = async (
-  stream: ReadableStream,
-): Promise<string> => {
+  /** @type {ReadableStream} */ stream,
+) => {
   const decoder = new TextDecoder();
   let result = "";
   for await (const chunk of stream) {
@@ -19,7 +22,11 @@ const consumeStream = async (
   return result;
 };
 
-const consumeGenerator = (generator: ReturnType<typeof html>): string => {
+/**
+ * @param {ReturnType<html>} generator
+ * @returns {string}
+ */
+const consumeGenerator = (generator) => {
   let result = "";
   for (const chunk of generator) {
     result += chunk;
@@ -164,7 +171,7 @@ Deno.test(`${html.name} renders ${suspend.name} placeholder`, () => {
   const placeholder = html`
     <p>Loading⏳</p>
   `;
-  const promise = new Promise<HTMLGenerator>((resolve) =>
+  const promise = new Promise((resolve) =>
     resolve(html`
       <p>Loaded✅</p>
     `)
@@ -225,7 +232,7 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
   const content = html`
     <p>Loaded✅</p>
   `;
-  const promise = new Promise<HTMLGenerator>((resolve) =>
+  const promise = new Promise((resolve) =>
     resolve(html`
       ${content}${nestedSuspend}
     `)
@@ -326,7 +333,7 @@ Deno.test(`${suspend.name} returned object shows placeholder when used as a stri
   const placeholder = html`
     <p>Loading⏳</p>
   `;
-  const promise = new Promise<HTMLGenerator>(() => {});
+  const promise = new Promise(() => {});
 
   // Act
   const actual = `${suspend(placeholder, promise)}`;
@@ -346,7 +353,7 @@ Deno.test(`${suspend.name} promise resolves to generator content with injected s
     <p>Loading⏳</p>
   `;
   /** @type {Promise<ReturnType<html>>} */
-  const promise = new Promise<HTMLGenerator>((resolve) =>
+  const promise = new Promise((resolve) =>
     resolve(html`
       <p>Loaded✅</p>
     `)
@@ -385,7 +392,7 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
     <p>Loading⏳</p>
   `;
   /** @type {Promise<ReturnType<html>>} */
-  const promise = new Promise<HTMLGenerator>((_resolve, reject) =>
+  const promise = new Promise((_resolve, reject) =>
     reject(html`
       <p>Failed❌</p>
     `)
