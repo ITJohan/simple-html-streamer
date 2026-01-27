@@ -1,25 +1,26 @@
-import { assert, assertEquals } from "jsr:@std/assert";
+import { deepEqual, ok } from "node:assert";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { test } from "node:test";
 import {
-  escapeHTML,
-  html,
-  registerIslands,
-  stream,
-  suspend,
+	escapeHTML,
+	html,
+	registerIslands,
+	stream,
+	suspend,
 } from "./html-streamer.js";
 
 /**
  * @param {ReadableStream} stream
  * @returns {Promise<string>}
  */
-const consumeStream = async (
-  /** @type {ReadableStream} */ stream,
-) => {
-  const decoder = new TextDecoder();
-  let result = "";
-  for await (const chunk of stream) {
-    result += decoder.decode(chunk);
-  }
-  return result;
+const consumeStream = async (/** @type {ReadableStream} */ stream) => {
+	const decoder = new TextDecoder();
+	let result = "";
+	for await (const chunk of stream) {
+		result += decoder.decode(chunk);
+	}
+	return result;
 };
 
 /**
@@ -27,46 +28,46 @@ const consumeStream = async (
  * @returns {string}
  */
 const consumeGenerator = (generator) => {
-  let result = "";
-  for (const chunk of generator) {
-    result += chunk;
-  }
-  return result;
+	let result = "";
+	for (const chunk of generator) {
+		result += chunk;
+	}
+	return result;
 };
 
-Deno.test(`${html.name} renders empty string`, () => {
-  // Arrange
-  const expected = `
+test(`${html.name} renders empty string`, () => {
+	// Arrange
+	const expected = `
 
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
 
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders a static string`, () => {
-  // Arrange
-  const expected = `
+test(`${html.name} renders a static string`, () => {
+	// Arrange
+	const expected = `
     <h1>hello</h1>
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <h1>hello</h1>
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders dynamic primitives`, () => {
-  // Arrange
-  const expected = `
+test(`${html.name} renders dynamic primitives`, () => {
+	// Arrange
+	const expected = `
     <ul>
       <li>${`hello`}</li>
       <li>${123}</li>
@@ -74,8 +75,8 @@ Deno.test(`${html.name} renders dynamic primitives`, () => {
     </ul>
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <ul>
       <li>${`hello`}</li>
       <li>${123}</li>
@@ -83,39 +84,39 @@ Deno.test(`${html.name} renders dynamic primitives`, () => {
     </ul>
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders a nested ${html.name}`, () => {
-  // Arrange
-  const nestedHtml = html`
+test(`${html.name} renders a nested ${html.name}`, () => {
+	// Arrange
+	const nestedHtml = html`
     hello
   `;
-  const expected = `
+	const expected = `
     <p>
     hello
   </p>
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <p>${nestedHtml}</p>
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
-  // Arrange
-  const deeplyNestedHtml = html`
+test(`${html.name} renders a deeply nested ${html.name}`, () => {
+	// Arrange
+	const deeplyNestedHtml = html`
     hello
   `;
-  const nestedHtml = html`
+	const nestedHtml = html`
     <li>${deeplyNestedHtml}</li>
   `;
-  const expected = `
+	const expected = `
     <ul>
       
     <li>
@@ -125,25 +126,26 @@ Deno.test(`${html.name} renders a deeply nested ${html.name}`, () => {
     </ul>
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <ul>
       ${nestedHtml}
     </ul>
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders an array of ${html.name} values`, () => {
-  // Arrange
-  const items = ["a", 1, true].map((value) =>
-    html`
+test(`${html.name} renders an array of ${html.name} values`, () => {
+	// Arrange
+	const items = ["a", 1, true].map(
+		(value) =>
+			html`
       <li>${value}</li>
-    `
-  );
-  const expected = `
+    `,
+	);
+	const expected = `
     <ul>
       
       <li>a</li>
@@ -155,104 +157,104 @@ Deno.test(`${html.name} renders an array of ${html.name} values`, () => {
     </ul>
   `;
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <ul>
       ${items}
     </ul>
   `);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${html.name} renders ${suspend.name} placeholder`, () => {
-  // Arrange
-  const placeholder = html`
+test(`${html.name} renders ${suspend.name} placeholder`, () => {
+	// Arrange
+	const placeholder = html`
     <p>Loading⏳</p>
   `;
-  const promise = new Promise((resolve) =>
-    resolve(html`
+	const promise = new Promise((resolve) =>
+		resolve(html`
       <p>Loaded✅</p>
-    `)
-  );
-  const suspendPromise = suspend(placeholder, promise);
+    `),
+	);
+	const suspendPromise = suspend(placeholder, promise);
 
-  // Act
-  const actual = consumeGenerator(html`
+	// Act
+	const actual = consumeGenerator(html`
     <div>
       ${suspendPromise}
     </div>
   `);
-  const match = actual.match(/id="placeholder-(.+?)"/);
+	const match = actual.match(/id="placeholder-(.+?)"/);
 
-  // Assert
-  assert(match);
-  const expected = `
+	// Assert
+	ok(match);
+	const expected = `
     <div>
       <div id="placeholder-${match[1]}">
     <p>Loading⏳</p>
   </div>
     </div>
   `;
-  assertEquals(actual, expected);
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${stream.name} streams the given ${html.name} generator`, async () => {
-  // Arrange
-  const generator = html`
+test(`${stream.name} streams the given ${html.name} generator`, async () => {
+	// Arrange
+	const generator = html`
     <p>hello world</p>
   `;
-  const expected = `
+	const expected = `
     <p>hello world</p>
   `;
 
-  // Act
-  const actual = await consumeStream(stream(generator));
+	// Act
+	const actual = await consumeStream(stream(generator));
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
-  // Arrange
-  const nestedPlaceholder = html`
+test(`${stream.name} support nested ${suspend.name}`, async () => {
+	// Arrange
+	const nestedPlaceholder = html`
     <p>Loading nested⏳</p>
   `;
-  const nestedContent = html`
+	const nestedContent = html`
     <p>Loaded nested✅</p>
   `;
-  const nestedSuspend = suspend(
-    nestedPlaceholder,
-    new Promise((resolve) => resolve(nestedContent)),
-  );
-  const placeholder = html`
+	const nestedSuspend = suspend(
+		nestedPlaceholder,
+		new Promise((resolve) => resolve(nestedContent)),
+	);
+	const placeholder = html`
     <p>Loading⏳</p>
   `;
-  const content = html`
+	const content = html`
     <p>Loaded✅</p>
   `;
-  const promise = new Promise((resolve) =>
-    resolve(html`
+	const promise = new Promise((resolve) =>
+		resolve(html`
       ${content}${nestedSuspend}
-    `)
-  );
+    `),
+	);
 
-  // Act
-  const actual = await consumeStream(
-    stream(html`
+	// Act
+	const actual = await consumeStream(
+		stream(html`
       <div>
         ${suspend(placeholder, promise)}
       </div>
     `),
-  );
-  const matches = [...actual.matchAll(/id="placeholder-(.+?)"/g)];
+	);
+	const matches = [...actual.matchAll(/id="placeholder-(.+?)"/g)];
 
-  // Assert
-  assert(matches.length === 2);
-  assert(matches[0][1]);
-  assert(matches[1][1]);
-  const expected = `
+	// Assert
+	ok(matches.length === 2);
+	ok(matches[0][1]);
+	ok(matches[1][1]);
+	const expected = `
       <div>
         <div id="placeholder-${matches[0][1]}">
     <p>Loading⏳</p>
@@ -272,8 +274,8 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
     (function() {
       const content = document.getElementById('content-${matches[0][1]}');
       const placeholder = document.getElementById('placeholder-${
-    matches[0][1]
-  }');
+				matches[0][1]
+			}');
       if (content && placeholder) {
         placeholder.replaceWith(content.content.cloneNode(true));
         content.remove();
@@ -291,8 +293,8 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
     (function() {
       const content = document.getElementById('content-${matches[1][1]}');
       const placeholder = document.getElementById('placeholder-${
-    matches[1][1]
-  }');
+				matches[1][1]
+			}');
       if (content && placeholder) {
         placeholder.replaceWith(content.content.cloneNode(true));
         content.remove();
@@ -301,71 +303,71 @@ Deno.test(`${stream.name} support nested ${suspend.name}`, async () => {
     })()
     </script>
   `;
-  assertEquals(actual, expected);
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${stream.name} cancels the chunk enqueueing when canceled`, async () => {
-  // Arrange
-  const generatorStream = stream(html`
+test(`${stream.name} cancels the chunk enqueueing when canceled`, async () => {
+	// Arrange
+	const generatorStream = stream(html`
     <h1>This is generating some HTML</h1>
     ${html`
       <p>This is generating some more</p>
     `}
   `);
-  const expected = `
+	const expected = `
     <h1>This is generating some HTML</h1>
     `;
-  const decoder = new TextDecoder();
+	const decoder = new TextDecoder();
 
-  // Act
-  let actual = "";
-  for await (const chunk of generatorStream) {
-    actual += decoder.decode(chunk);
-    break;
-  }
+	// Act
+	let actual = "";
+	for await (const chunk of generatorStream) {
+		actual += decoder.decode(chunk);
+		break;
+	}
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${suspend.name} returned object shows placeholder when used as a string`, () => {
-  // Arrange
-  const placeholder = html`
+test(`${suspend.name} returned object shows placeholder when used as a string`, () => {
+	// Arrange
+	const placeholder = html`
     <p>Loading⏳</p>
   `;
-  const promise = new Promise(() => {});
+	const promise = new Promise(() => {});
 
-  // Act
-  const actual = `${suspend(placeholder, promise)}`;
-  const match = actual.match(/id="placeholder-(.+?)"/);
+	// Act
+	const actual = `${suspend(placeholder, promise)}`;
+	const match = actual.match(/id="placeholder-(.+?)"/);
 
-  // Assert
-  assert(match);
-  const expected = `<div id="placeholder-${match[1]}">
+	// Assert
+	ok(match);
+	const expected = `<div id="placeholder-${match[1]}">
     <p>Loading⏳</p>
   </div>`;
-  assertEquals(actual, expected);
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${suspend.name} promise resolves to generator content with injected script`, async () => {
-  // Arrange
-  const placeholder = html`
+test(`${suspend.name} promise resolves to generator content with injected script`, async () => {
+	// Arrange
+	const placeholder = html`
     <p>Loading⏳</p>
   `;
-  /** @type {Promise<ReturnType<html>>} */
-  const promise = new Promise((resolve) =>
-    resolve(html`
+	/** @type {Promise<ReturnType<html>>} */
+	const promise = new Promise((resolve) =>
+		resolve(html`
       <p>Loaded✅</p>
-    `)
-  );
+    `),
+	);
 
-  // Act
-  const actual = consumeGenerator(await suspend(placeholder, promise));
-  const match = actual.match(/id="content-(.+?)"/);
+	// Act
+	const actual = consumeGenerator(await suspend(placeholder, promise));
+	const match = actual.match(/id="content-(.+?)"/);
 
-  // Assert
-  assert(match);
-  const expected = `
+	// Assert
+	ok(match);
+	const expected = `
     <template id="content-${match[1]}">
       
       <p>Loaded✅</p>
@@ -383,28 +385,28 @@ Deno.test(`${suspend.name} promise resolves to generator content with injected s
     })()
     </script>
   `;
-  assertEquals(actual, expected);
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${suspend.name} promise rejects to error`, async () => {
-  // Arrange
-  const placeholder = html`
+test(`${suspend.name} promise rejects to error`, async () => {
+	// Arrange
+	const placeholder = html`
     <p>Loading⏳</p>
   `;
-  /** @type {Promise<ReturnType<html>>} */
-  const promise = new Promise((_resolve, reject) =>
-    reject(html`
+	/** @type {Promise<ReturnType<html>>} */
+	const promise = new Promise((_resolve, reject) =>
+		reject(html`
       <p>Failed❌</p>
-    `)
-  );
+    `),
+	);
 
-  // Act
-  const actual = consumeGenerator(await suspend(placeholder, promise));
-  const match = actual.match(/id="content-(.+?)"/);
+	// Act
+	const actual = consumeGenerator(await suspend(placeholder, promise));
+	const match = actual.match(/id="content-(.+?)"/);
 
-  // Assert
-  assert(match);
-  const expected = `
+	// Assert
+	ok(match);
+	const expected = `
     <template id="content-${match[1]}">
       
       <p>Failed❌</p>
@@ -422,31 +424,31 @@ Deno.test(`${suspend.name} promise rejects to error`, async () => {
     })()
     </script>
   `;
-  assertEquals(actual, expected);
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${escapeHTML.name} escapes a HTML string`, () => {
-  // Arrange
-  const maliciousHtml = "<script>alert('XSS attack!!!');</script>";
-  const expected =
-    "&lt;script&gt;alert(&#039;XSS attack!!!&#039;);&lt;/script&gt;";
+test(`${escapeHTML.name} escapes a HTML string`, () => {
+	// Arrange
+	const maliciousHtml = "<script>alert('XSS attack!!!');</script>";
+	const expected =
+		"&lt;script&gt;alert(&#039;XSS attack!!!&#039;);&lt;/script&gt;";
 
-  // Act
-  const actual = escapeHTML(maliciousHtml);
+	// Act
+	const actual = escapeHTML(maliciousHtml);
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });
 
-Deno.test(`${registerIslands.name} reads islands dir and returns script element that lazy loads island script`, async () => {
-  // Arrange
-  const encoder = new TextEncoder();
-  const dirPath = new URL("./islands/", import.meta.url).pathname;
-  await Deno.mkdir(dirPath);
-  await Deno.writeFile(dirPath + "island-1.js", encoder.encode("island-1"));
-  await Deno.writeFile(dirPath + "island-2.js", encoder.encode("island-2"));
-  await Deno.writeFile(dirPath + "island-3.js", encoder.encode("island-3"));
-  const expected = `
+test(`${registerIslands.name} reads islands dir and returns script element that lazy loads island script`, async () => {
+	// Arrange
+	const encoder = new TextEncoder();
+	const dirPath = new URL("./islands/", import.meta.url).pathname;
+	await mkdir(dirPath, { recursive: true });
+	await writeFile(join(dirPath, "island-1.js"), encoder.encode("island-1"));
+	await writeFile(join(dirPath, "island-2.js"), encoder.encode("island-2"));
+	await writeFile(join(dirPath, "island-3.js"), encoder.encode("island-3"));
+	const expected = `
     <script>
     
         if (document.querySelector('island-1')) import('./islands/island-1.js');
@@ -458,11 +460,11 @@ Deno.test(`${registerIslands.name} reads islands dir and returns script element 
     </script>
   `;
 
-  // Act
-  const generator = registerIslands(import.meta.url, "./islands/");
-  const actual = consumeGenerator(generator);
-  await Deno.remove(dirPath, { recursive: true });
+	// Act
+	const generator = registerIslands(import.meta.url, "./islands/");
+	const actual = consumeGenerator(generator);
+	await rm(dirPath, { recursive: true, force: true });
 
-  // Assert
-  assertEquals(actual, expected);
+	// Assert
+	deepEqual(actual, expected);
 });

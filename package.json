@@ -1,0 +1,22 @@
+{
+	"name": "simple-html-streamer",
+	"version": "1.0.0",
+	"description": "Exports 5 functions, `html`, `suspend`, `stream`, `escapeHTML` and `registerIslands`, which enables streaming HTML out of order.",
+	"main": "index.js",
+	"scripts": {
+		"test": "npm --test",
+		"fix": "npx @biomejs/biome check --fix"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ITJohan/simple-html-streamer.git"
+	},
+	"keywords": [],
+	"author": "Johan Lindkvist",
+	"license": "ISC",
+	"type": "module",
+	"bugs": {
+		"url": "https://github.com/ITJohan/simple-html-streamer/issues"
+	},
+	"homepage": "https://github.com/ITJohan/simple-html-streamer#readme"
+}

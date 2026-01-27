@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 /**
  * @typedef {(Generator<
  *  (
@@ -29,12 +32,12 @@ const isHTMLGenerator = (value) => value.toString() === "[object Generator]";
  * @returns {string}
  */
 export const escapeHTML = (string) => {
-  return string
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+	return string
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
 };
 
 /**
@@ -42,19 +45,19 @@ export const escapeHTML = (string) => {
  * @returns {HTMLGenerator}
  */
 function* processValue(value) {
-  if (isHTMLGenerator(value)) {
-    const generator = value;
-    for (const chunk of generator) {
-      yield* processValue(chunk);
-    }
-  } else if (Array.isArray(value)) {
-    const array = value;
-    for (const item of array) {
-      yield* processValue(item);
-    }
-  } else {
-    yield value;
-  }
+	if (isHTMLGenerator(value)) {
+		const generator = value;
+		for (const chunk of generator) {
+			yield* processValue(chunk);
+		}
+	} else if (Array.isArray(value)) {
+		const array = value;
+		for (const item of array) {
+			yield* processValue(item);
+		}
+	} else {
+		yield value;
+	}
 }
 
 /**
@@ -63,12 +66,12 @@ function* processValue(value) {
  * @returns {HTMLGenerator}
  */
 export function* html(strings, ...values) {
-  for (let i = 0; i < strings.length; i++) {
-    yield strings[i];
-    if (i < values.length) {
-      yield* processValue(values[i]);
-    }
-  }
+	for (let i = 0; i < strings.length; i++) {
+		yield strings[i];
+		if (i < values.length) {
+			yield* processValue(values[i]);
+		}
+	}
 }
 
 /**
@@ -77,7 +80,7 @@ export function* html(strings, ...values) {
  * @returns {HTMLGenerator}
  */
 function* generateInjectionScript(id, content) {
-  yield* html`
+	yield* html`
     <template id="content-${id}">
       ${content}
     </template>
@@ -101,27 +104,25 @@ function* generateInjectionScript(id, content) {
  * @returns {Promise<HTMLGenerator>} Promise with toPrimitive function
  */
 export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
-  const streamId = crypto.randomUUID();
-  const contentPromiseWithToPrimitive = contentGeneratorPromise.then(
-    function* (content) {
-      yield* generateInjectionScript(streamId, content);
-    },
-  ).catch(
-    function* (content) {
-      yield* generateInjectionScript(streamId, content);
-    },
-  );
+	const streamId = crypto.randomUUID();
+	const contentPromiseWithToPrimitive = contentGeneratorPromise
+		.then(function* (content) {
+			yield* generateInjectionScript(streamId, content);
+		})
+		.catch(function* (content) {
+			yield* generateInjectionScript(streamId, content);
+		});
 
-  // @ts-ignore: Hack for showing placeholder when promise is used as a string
-  contentPromiseWithToPrimitive[Symbol.toPrimitive] = () => {
-    let placeholder = "";
-    for (const chunk of placeholderGenerator) {
-      placeholder += chunk;
-    }
-    return `<div id="placeholder-${streamId}">${placeholder}</div>`;
-  };
+	// @ts-expect-error: Hack for showing placeholder when promise is used as a string
+	contentPromiseWithToPrimitive[Symbol.toPrimitive] = () => {
+		let placeholder = "";
+		for (const chunk of placeholderGenerator) {
+			placeholder += chunk;
+		}
+		return `<div id="placeholder-${streamId}">${placeholder}</div>`;
+	};
 
-  return contentPromiseWithToPrimitive;
+	return contentPromiseWithToPrimitive;
 };
 
 /**
@@ -129,78 +130,78 @@ export const suspend = (placeholderGenerator, contentGeneratorPromise) => {
  * @returns {ReadableStream<Uint8Array>}
  */
 export const stream = (generator) => {
-  let isCanceled = false;
+	let isCanceled = false;
 
-  return new ReadableStream({
-    async start(controller) {
-      /**
-       * @param {HTMLGenerator} generator
-       * @param {ReadableStreamDefaultController<Uint8Array>} controller
-       * @returns {Promise<void>}
-       */
-      const processShell = async (generator, controller) => {
-        if (isCanceled) return;
+	return new ReadableStream({
+		async start(controller) {
+			/**
+			 * @param {HTMLGenerator} generator
+			 * @param {ReadableStreamDefaultController<Uint8Array>} controller
+			 * @returns {Promise<void>}
+			 */
+			const processShell = async (generator, controller) => {
+				if (isCanceled) return;
 
-        /** @type {Promise<void>[]} */
-        const promises = [];
-        const encoder = new TextEncoder();
+				/** @type {Promise<void>[]} */
+				const promises = [];
+				const encoder = new TextEncoder();
 
-        for (const chunk of generator) {
-          if (chunk instanceof Promise) {
-            promises.push(processPromise(chunk, controller, encoder));
-          }
-          controller.enqueue(encoder.encode(String(chunk)));
-        }
+				for (const chunk of generator) {
+					if (chunk instanceof Promise) {
+						promises.push(processPromise(chunk, controller, encoder));
+					}
+					controller.enqueue(encoder.encode(String(chunk)));
+				}
 
-        await Promise.all(promises);
-      };
+				await Promise.all(promises);
+			};
 
-      /**
-       * @param {Promise<string | number | boolean | HTMLGenerator>} promise
-       * @param {ReadableStreamDefaultController<Uint8Array>} controller
-       * @param {TextEncoder} encoder
-       * @returns {Promise<void>}
-       */
-      const processPromise = async (promise, controller, encoder) => {
-        if (isCanceled) return;
+			/**
+			 * @param {Promise<string | number | boolean | HTMLGenerator>} promise
+			 * @param {ReadableStreamDefaultController<Uint8Array>} controller
+			 * @param {TextEncoder} encoder
+			 * @returns {Promise<void>}
+			 */
+			const processPromise = async (promise, controller, encoder) => {
+				if (isCanceled) return;
 
-        /** @type {Promise<void>[]} */
-        const nestedPromises = [];
-        try {
-          const value = await promise;
-          if (isHTMLGenerator(value)) {
-            const generator = value;
-            for (const chunk of generator) {
-              if (chunk instanceof Promise) {
-                nestedPromises.push(processPromise(chunk, controller, encoder));
-              }
-              controller.enqueue(encoder.encode(String(chunk)));
-            }
-          }
-        } catch (error) {
-          if (isHTMLGenerator(error)) {
-            const generator = error;
-            for (const chunk of generator) {
-              if (chunk instanceof Promise) {
-                nestedPromises.push(processPromise(chunk, controller, encoder));
-              }
-              controller.enqueue(encoder.encode(String(chunk)));
-            }
-          }
-        } finally {
-          await Promise.all(nestedPromises);
-        }
-      };
+				/** @type {Promise<void>[]} */
+				const nestedPromises = [];
+				try {
+					const value = await promise;
+					if (isHTMLGenerator(value)) {
+						const generator = value;
+						for (const chunk of generator) {
+							if (chunk instanceof Promise) {
+								nestedPromises.push(processPromise(chunk, controller, encoder));
+							}
+							controller.enqueue(encoder.encode(String(chunk)));
+						}
+					}
+				} catch (error) {
+					if (isHTMLGenerator(error)) {
+						const generator = error;
+						for (const chunk of generator) {
+							if (chunk instanceof Promise) {
+								nestedPromises.push(processPromise(chunk, controller, encoder));
+							}
+							controller.enqueue(encoder.encode(String(chunk)));
+						}
+					}
+				} finally {
+					await Promise.all(nestedPromises);
+				}
+			};
 
-      await processShell(generator, controller);
+			await processShell(generator, controller);
 
-      if (isCanceled) return;
-      controller.close();
-    },
-    cancel() {
-      isCanceled = true;
-    },
-  });
+			if (isCanceled) return;
+			controller.close();
+		},
+		cancel() {
+			isCanceled = true;
+		},
+	});
 };
 
 /**
@@ -209,28 +210,30 @@ export const stream = (generator) => {
  * @returns {HTMLGenerator}
  */
 export const registerIslands = (basePath, relativePath) => {
-  let directory;
-  try {
-    directory = Deno.readDirSync(new URL(relativePath, basePath).pathname);
-  } catch (error) {
-    console.error("Could not find directory:", error);
-    throw new Error("Could not find directory");
-  }
+	let directory;
+	try {
+		const fullPath = fileURLToPath(new URL(relativePath, basePath));
+		directory = readdirSync(fullPath, { withFileTypes: true });
+	} catch (error) {
+		console.error("Could not find directory:", error);
+		throw new Error("Could not find directory");
+	}
 
-  const islands = [];
-  for (const file of directory) {
-    if (file.isFile && file.name.endsWith(".js")) {
-      islands.push(file.name.split(".")[0]);
-    }
-  }
+	const islands = [];
+	for (const entry of directory) {
+		if (entry.isFile() && entry.name.endsWith(".js")) {
+			islands.push(entry.name.split(".")[0]);
+		}
+	}
 
-  return html`
+	return html`
     <script>
-    ${islands.map((island) =>
-      html`
+    ${islands.map(
+			(island) =>
+				html`
         if (document.querySelector('${island}')) import('${relativePath}${island}.js');
-      `
-    )}
+      `,
+		)}
     </script>
   `;
 };
